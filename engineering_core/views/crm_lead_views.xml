@@ -4,12 +4,20 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='phone']" position="after">
-                 <separator string="تفاصيل العقار والخدمة"/>
-                 <group>
+            <!-- 
+                CHANGE: Move the section to 'before' the notebook (tabs).
+                This gives it full width across the page so the Radio buttons fit.
+            -->
+            <xpath expr="//notebook" position="before">
+                
+                <!-- Added a horizontal separator for clean design -->
+                <separator string="تفاصيل العقار والخدمة"/>
+                
+                <group>
                     <group>
-                        <field name="building_type" widget="radio"/>
-                        <field name="service_type" widget="radio"/>
+                        <!-- Added options horizontal to force radio buttons side-by-side if possible -->
+                        <field name="building_type" widget="radio" options="{'horizontal': true}"/>
+                        <field name="service_type" widget="radio" options="{'horizontal': true}"/>
                     </group>
                     <group>
                         <field name="area"/>
