@@ -1,54 +1,67 @@
 <odoo>
     <template id="portal_contract_template" name="Contract Portal Template">
         <t t-call="portal.portal_layout">
+            <t t-set="contract" t-value="contract"/>
             <div id="wrap">
                 <div class="container mt-4 mb-5">
                     <div class="card">
+                        
+                        <!-- Header -->
                         <div class="card-header bg-primary text-white text-center">
-                            <h2>عقد رقم (Contract No): <t t-esc="contract.name"/></h2>
+                            <h2>عقد هندسي رقم: <t t-esc="contract.name"/></h2>
                         </div>
+                        
                         <div class="card-body">
-                            <div class="row mb-4">
-                                <div class="col-6">
-                                    <strong>العميل (Customer):</strong> <span t-field="contract.partner_id.name"/><br/>
+                            <!-- Contract Details -->
+                            <div class="row mb-4" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                                <div class="col-md-6">
+                                    <strong>العميل:</strong> <span t-field="contract.partner_id.name"/><br/>
                                     <strong>نوع العقار:</strong> <span t-field="contract.building_type"/><br/>
-                                    <strong>الخدمة:</strong> <span t-field="contract.service_type"/>
+                                    <strong>نوع الخدمة:</strong> <span t-field="contract.service_type"/>
                                 </div>
-                                <div class="col-6">
-                                    <strong>المبلغ (Amount):</strong> <span t-field="contract.contract_amount"/><br/>
-                                    <strong>القسيمة:</strong> <span t-field="contract.plot_no"/><br/>
-                                    <strong>القطعة:</strong> <span t-field="contract.block_no"/>
+                                <div class="col-md-6">
+                                    <strong>قيمة العقد:</strong> <span t-field="contract.contract_amount"/><br/>
+                                    <strong>رقم القسيمة:</strong> <span t-field="contract.plot_no"/><br/>
+                                    <strong>المنطقة:</strong> <span t-field="contract.area"/>
                                 </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="mt-4 mb-4">
+                                <h4 class="text-primary">محتوى العقد (Contract Body)</h4>
+                                <div class="p-3 border" t-raw="contract.contract_body"/>
+                            </div>
+
+                            <div class="mt-4 mb-4">
+                                <h4 class="text-primary">الشروط والأحكام (Terms &amp; Conditions)</h4>
+                                <div class="p-3 border" t-raw="contract.terms_conditions"/>
                             </div>
 
                             <hr/>
-                            
-                            <!-- Contract Content -->
-                            <div class="mt-4 mb-4">
-                                <h4>محتوى العقد (Contract Body)</h4>
-                                <div class="p-3 bg-light border" t-raw="contract.contract_body"/>
-                            </div>
 
-                            <div class="mt-4 mb-4">
-                                <h4>الشروط والأحكام (Terms)</h4>
-                                <div class="p-3 bg-light border" t-raw="contract.terms_conditions"/>
-                            </div>
-
-                            <!-- Signing Section -->
+                            <!-- SIGNATURE BOX (Shows only if status is 'Sent') -->
                             <t t-if="contract.state == 'sent'">
                                 <div class="alert alert-info text-center mt-4">
-                                    <h4>يرجى التوقيع على العقد (Please Sign the Contract)</h4>
+                                    <h4>يرجى قراءة العقد والتوقيع أدناه (Please review and sign)</h4>
+                                    
+                                    <!-- Odoo's Built-in Signature Button -->
                                     <t t-call="portal.signature_form">
                                         <t t-set="call_url" t-value="contract.get_portal_url(suffix='/accept')"/>
                                         <t t-set="default_name" t-value="contract.partner_id.name"/>
+                                        <t t-set="send_label">توقيع وقبول العقد (Accept &amp; Sign)</t>
                                     </t>
                                 </div>
                             </t>
                             
+                            <!-- SUCCESS MESSAGE (Shows after signing) -->
                             <t t-if="contract.state in ['signed', 'active', 'completed']">
                                 <div class="alert alert-success text-center mt-4">
-                                    <h4>تم توقيع هذا العقد بنجاح. (This contract has been signed.)</h4>
+                                    <h4><i class="fa fa-check-circle"></i> تم توقيع هذا العقد بنجاح.</h4>
                                     <p>تاريخ التوقيع: <span t-field="contract.signature_date"/></p>
+                                    <!-- Show the customer's signature image -->
+                                    <img t-if="contract.signed_document" 
+                                         t-attf-src="data:image/png;base64,{{ contract.signed_document }}" 
+                                         style="max-height: 150px; border: 1px solid #ccc; padding: 10px; background: white;"/>
                                 </div>
                             </t>
 
