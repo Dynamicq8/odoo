@@ -7,6 +7,7 @@ class ContractPortal(CustomerPortal):
 
     @http.route(['/my/contract/<int:contract_id>'], type='http', auth="public", website=True)
     def portal_contract_page(self, contract_id, access_token=None, **kw):
+        """ This loads the white Portal Page for the customer """
         try:
             contract_sudo = self._document_check_access('engineering.contract', contract_id, access_token)
         except:
@@ -20,7 +21,7 @@ class ContractPortal(CustomerPortal):
 
     @http.route(['/my/contract/<int:contract_id>/accept'], type='json', auth="public", website=True)
     def portal_contract_accept(self, contract_id, access_token=None, name=None, signature=None):
-        # This handles the signature drawing
+        """ This handles the signature when the customer clicks Accept & Sign """
         try:
             contract_sudo = self._document_check_access('engineering.contract', contract_id, access_token)
         except:
@@ -29,6 +30,7 @@ class ContractPortal(CustomerPortal):
         if not signature:
             return {'error': _('Signature is missing.')}
 
+        # Save the signature and change state to 'signed'
         contract_sudo.write({
             'signed_document_name': f"{name}_signature.png",
             'signed_document': signature,
