@@ -5,50 +5,38 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
-                <!-- Project Details Section -->
+                <!-- Use a div to contain the entire project details section -->
                 <div class="oe_title">
                     <h3><label for="building_type" string="بيانات المشروع (Project Details)"/></h3>
                 </div>
 
-                <group name="project_details_section_main">
-                    <group name="project_details_column_one">
+                <group name="project_details_section">
+                    <group>
                         <field name="building_type"/>
                         <field name="service_type"/>
                     </group>
-                    <group name="project_details_column_two_spacer">
-                        <!-- Empty group for spacing/column alignment -->
-                    </group>
+                    <!-- This empty group pushes the next group to a new column/row, creating space -->
+                    <group/>
                 </group>
 
-                <!-- Location Details Section -->
+                <!-- Use a separate div for the location details to ensure they are distinct -->
                 <div class="oe_title">
                     <h3><label for="area" string="تفاصيل الموقع (Location Details)"/></h3>
                 </div>
 
-                <!-- NEW: Separate groups for pairs of fields to maximize space -->
-                <group name="location_details_row_one">
-                    <group name="location_details_col_1">
+                <group name="location_details_section">
+                    <group>
                         <field name="area"/>
                         <field name="block_no"/>
                     </group>
-                    <group name="location_details_col_2_spacer">
-                        <!-- Empty group to push content left/right and ensure space -->
-                    </group>
-                </group>
-
-                <!-- Ensure Street and Plot No. get their own full horizontal space -->
-                <group name="location_details_row_two">
-                    <group name="location_details_col_3">
+                    <group>
                         <field name="street_no"/>
                         <field name="plot_no"/>
                     </group>
-                    <group name="location_details_col_4_spacer">
-                        <!-- Empty group for spacing/column alignment -->
-                    </group>
                 </group>
 
-                <!-- You can also add a horizontal rule for extra visual separation if needed: -->
-                <!-- <separator/> -->
+                <!-- If there's still a problem, consider adding a generic spacer -->
+                <!-- <div style="height: 20px;"></div> -->
 
             </xpath>
         </field>
