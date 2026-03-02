@@ -111,16 +111,24 @@ class EngineeringContract(models.Model):
     @api.onchange('project_id')
     def _onchange_project_id(self):
         """Fill contract details from project"""
-        if self.project_id:
-            self.partner_id = self.project_id.partner_id
-            if self.project_id.sale_order_id:
-                order = self.project_id.sale_order_id
-                self.building_type = order.building_type
-                self.service_type = order.service_type
-                self.plot_no = order.plot_no
-                self.block_no = order.block_no
-                self.area = order.area
-                self.contract_amount = order.amount_total
+        for rec in self:
+            if rec.project_id:
+                # 1. Fill Customer
+                rec.partner_id = rec.project_id.partner_id
+                
+                # 2. Check if the project has a Quotation linked to it
+                if rec.project_id.sale_order_id:
+                    order = rec.project_id.sale_order_id
+                    rec.building_type = order.building_type
+                    rec.service_type = order.service_type
+                    rec.plot_no = order.plot_no
+                    rec.block_no = order.block_no
+                    rec.street_no = order.street_no    # <-- Added
+                    rec.area = order.area
+                    rec.contract_amount = order.amount_total
+                    
+                    if order.partner_id:
+                        rec.civil_number = order.partner_id.civil_number  # <-- Added
 
     def action_send_for_signature(self):
         """Send contract for electronic signature via WhatsApp"""
