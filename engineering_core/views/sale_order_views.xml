@@ -5,16 +5,20 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
-                <group string="بيانات المشروع (Project Details)">
-                    <group>
+                <group string="بيانات المشروع (Project Details)" name="project_details_main_group">
+                    <!-- First set of fields, forced into their own column -->
+                    <group name="project_details_column_1">
                         <field name="building_type"/>
                         <field name="service_type"/>
                     </group>
-                    <!-- Add an empty group or a separator to create vertical space/separation -->
-                    <group class="oe_right">
-                        <!-- This empty group effectively creates a new column/space -->
+                    <!-- This empty group pushes the next content to a new line or provides spacing -->
+                    <group name="project_details_spacer_group">
+                        <!-- Intentionally left empty for spacing/column break -->
                     </group>
-                    <group>
+                    <!-- A separator to visually break up the sections -->
+                    <separator string="تفاصيل الموقع (Location Details)"/>
+                    <!-- Second set of fields, also forced into their own column for clarity -->
+                    <group name="project_details_column_2">
                         <field name="area"/>
                         <field name="block_no"/>
                         <field name="street_no"/>
