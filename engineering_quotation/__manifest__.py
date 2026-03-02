@@ -17,6 +17,8 @@
         'views/sale_order_views.xml',
         'report/quotation_report.xml',
         'report/quotation_templates.xml',
+        'views/sale_portal_templates.xml',  # <--- ADD THIS LINE
+
     ],
     'license': 'LGPL-3',
     'installable': True,
