@@ -1,79 +1,71 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import models, fields, api
 
+# ==============================================================================
+#  RES PARTNER - This part is fine, no changes needed
+# ==============================================================================
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    building_type = fields.Selection([
-        ('residential', 'سكن خاص (Private Housing)'),
-        ('investment', 'استثماري (Investment Building)'),
-        ('commercial', 'تجاري (Commercial Building)'),
-        ('industrial', 'صناعي (Industrial Building)'),
-        ('cooperative', 'جمعيات وتعاونيات (Cooperative)'),
-        ('mosque', 'مساجد (Mosques)'),
-        ('hangar', 'مخازن / شبرات (Hangar)'),
-        ('farm', 'مزارع (Farms)')
-    ], string="نوع العقار (Building Type)", tracking=True)
-
-    service_type = fields.Selection([
-        ('new_construction', 'بناء جديد (New Construction)'),
-        ('demolition', 'هدم (Demolition)'),
-        ('modification', 'تعديل (Modification)'),
-        ('extension', 'توسعة (Extension)'),
-        ('extension_modification', 'تعديل وتوسعة (Extension & Modification)'),
-        ('supervision_only', 'إشراف هندسي فقط (Supervision Only)'),
-        ('renovation', 'ترميم (Renovation)'),
-        ('internal_partitions', 'قواطع داخلية (Internal Partitions)'),
-        ('shades_garden', 'مظلات / حدائق (Shades / Garden)')
-    ], string="نوع الخدمة (Service Type)", tracking=True)
-
+    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار", tracking=True)
+    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('extension', 'توسعة'), ('extension_modification', 'تعديل وتوسعة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة", tracking=True)
     civil_number = fields.Char(string="الرقم المدني (Civil ID)")
-    plot_no = fields.Char(string="رقم القسيمة (Plot)")
-    block_no = fields.Char(string="القطعة (Block)")
-    street_no = fields.Char(string="الشارع (Street)")  # Added based on Contract requirements
-    area = fields.Char(string="المساحة (Area)")
-
-
-class CrmLead(models.Model):
-    _inherit = 'crm.lead'
-
-    building_type = fields.Selection([
-        ('residential', 'سكن خاص (Private Housing)'),
-        ('investment', 'استثماري (Investment Building)'),
-        ('commercial', 'تجاري (Commercial Building)'),
-        ('industrial', 'صناعي (Industrial Building)'),
-        ('cooperative', 'جمعيات وتعاونيات (Cooperative)'),
-        ('mosque', 'مساجد (Mosques)'),
-        ('hangar', 'مخازن / شبرات (Hangar)'),
-        ('farm', 'مزارع (Farms)')
-    ], string="نوع العقار (Building Type)")
-
-    service_type = fields.Selection([
-        ('new_construction', 'بناء جديد (New Construction)'),
-        ('demolition', 'هدم (Demolition)'),
-        ('modification', 'تعديل (Modification)'),
-        ('extension', 'توسعة (Extension)'),
-        ('extension_modification', 'تعديل وتوسعة (Extension & Modification)'),
-        ('supervision_only', 'إشراف هندسي فقط (Supervision Only)'),
-        ('renovation', 'ترميم (Renovation)'),
-        ('internal_partitions', 'قواطع داخلية (Internal Partitions)'),
-        ('shades_garden', 'مظلات / حدائق (Shades / Garden)')
-    ], string="نوع الخدمة (Service Type)")
-
     plot_no = fields.Char(string="رقم القسيمة (Plot)")
     block_no = fields.Char(string="القطعة (Block)")
     street_no = fields.Char(string="الشارع (Street)")
     area = fields.Char(string="المساحة (Area)")
 
 
+# ==============================================================================
+#  CRM LEAD - Added a function to copy data to new quotations
+# ==============================================================================
+class CrmLead(models.Model):
+    _inherit = 'crm.lead'
+
+    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
+    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('extension', 'توسعة'), ('extension_modification', 'تعديل وتوسعة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
+    plot_no = fields.Char(string="رقم القسيمة (Plot)")
+    block_no = fields.Char(string="القطعة (Block)")
+    street_no = fields.Char(string="الشارع (Street)")
+    area = fields.Char(string="المساحة (Area)")
+    
+    # --- NEW FUNCTION ---
+    # This runs when you click 'New Quotation' from a CRM Lead
+    def _prepare_sale_order_values(self, partner, company, access_token):
+        # First, get all the standard values Odoo prepares
+        values = super()._prepare_sale_order_values(partner, company, access_token)
+        
+        # Now, add our custom engineering fields to the list of values to be copied
+        if self.building_type:
+            values['building_type'] = self.building_type
+        if self.service_type:
+            values['service_type'] = self.service_type
+        if self.plot_no:
+            values['plot_no'] = self.plot_no
+        if self.block_no:
+            values['block_no'] = self.block_no
+        if self.street_no:
+            values['street_no'] = self.street_no
+        if self.area:
+            values['area'] = self.area
+            
+        return values
+
+
+# ==============================================================================
+#  SALE ORDER - This is where the main fix is. Fields are no longer 'related'.
+# ==============================================================================
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    # Related fields allow auto-filling from the Opportunity (CRM)
-    building_type = fields.Selection(related='opportunity_id.building_type', readonly=False, store=True, string="نوع العقار")
-    service_type = fields.Selection(related='opportunity_id.service_type', readonly=False, store=True, string="نوع الخدمة")
+    # --- THE FIX ---
+    # Removed 'related=...' from all fields. They are now independent and fully editable.
+    # The function above in CrmLead handles copying the data initially.
+    
+    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار", store=True)
+    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('extension', 'توسعة'), ('extension_modification', 'تعديل وتوسعة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة", store=True)
 
-    plot_no = fields.Char(related='opportunity_id.plot_no', readonly=False, store=True, string="رقم القسيمة")
-    block_no = fields.Char(related='opportunity_id.block_no', readonly=False, store=True, string="القطعة")
-    street_no = fields.Char(related='opportunity_id.street_no', readonly=False, store=True, string="الشارع")
-    area = fields.Char(related='opportunity_id.area', readonly=False, store=True, string="المساحة")
+    plot_no = fields.Char(string="رقم القسيمة", store=True)
+    block_no = fields.Char(string="القطعة", store=True)
+    street_no = fields.Char(string="الشارع", store=True)
+    area = fields.Char(string="المساحة", store=True)
