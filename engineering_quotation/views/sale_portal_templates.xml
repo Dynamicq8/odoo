@@ -1,0 +1,49 @@
+<odoo>
+    <template id="sale_order_portal_content_inherit_engineering" inherit_id="sale.sale_order_portal_content">
+        <!-- 
+           This targets the "Sale Information" area (Date, Expiration) 
+           and adds your engineering details right next to it or below it.
+        -->
+        <xpath expr="//div[@id='informations']" position="after">
+            
+            <div class="row mt-4 mb-4" id="engineering_details">
+                <div class="col-12">
+                    <h5 class="mb-3 text-primary">تفاصيل المشروع (Project Details)</h5>
+                    <hr/>
+                </div>
+
+                <!-- Column 1: Type -->
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="mb-2" t-if="sale_order.building_type">
+                        <strong>نوع العقار (Building Type):</strong>
+                        <span t-field="sale_order.building_type"/>
+                    </div>
+                    <div class="mb-2" t-if="sale_order.service_type">
+                        <strong>نوع الخدمة (Service Type):</strong>
+                        <span t-field="sale_order.service_type"/>
+                    </div>
+                     <div class="mb-2" t-if="sale_order.area">
+                        <strong>المساحة (Area):</strong>
+                        <span t-field="sale_order.area"/>
+                    </div>
+                </div>
+
+                <!-- Column 2: Location -->
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="mb-2" t-if="sale_order.block_no">
+                        <strong>القطعة (Block):</strong>
+                        <span t-field="sale_order.block_no"/>
+                    </div>
+                    <div class="mb-2" t-if="sale_order.street_no">
+                        <strong>الشارع (Street):</strong>
+                        <span t-field="sale_order.street_no"/>
+                    </div>
+                    <div class="mb-2" t-if="sale_order.plot_no">
+                        <strong>رقم القسيمة (Plot):</strong>
+                        <span t-field="sale_order.plot_no"/>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
