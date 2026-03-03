@@ -17,20 +17,25 @@ class SaleOrder(models.Model):
         store=True
     )
 
-    @api.depends('engineering_package_id')
+    @api.depends('engineering_package_id', 'engineering_package_id.feature_ids', 'engineering_package_id.feature_ids.name', 'engineering_package_id.feature_ids.included')
     def _compute_package_features_html(self):
         """ Generates an HTML list of features for the selected package. """
         for order in self:
-            if not order.engineering_package_id:
+            if not order.engineering_package_id or not order.engineering_package_id.feature_ids:
                 order.package_features_html = False
                 continue
 
-            html = "<ul>"
+            # Creating a clean list with font-awesome icons
+            html = '<ul style="list-style-type: none; padding-right: 0; text-align: right; direction: rtl;">'
+            
             for feature in order.engineering_package_id.feature_ids:
                 if feature.included:
-                    html += f'<li><i class="fa fa-check text-success"/> {feature.name}</li>'
+                    # Added a checkmark icon and some padding
+                    html += f'<li style="margin-bottom: 8px;"><i class="fa fa-check text-success" style="margin-left: 10px;"></i> {feature.name}</li>'
                 else:
-                    html += f'<li><i class="fa fa-times text-danger"/> <s>{feature.name}</s></li>'
+                    # Optional: Skip non-included features or show them with an X
+                    html += f'<li style="margin-bottom: 8px; color: #999;"><i class="fa fa-times text-danger" style="margin-left: 10px;"></i> <s>{feature.name}</s></li>'
+            
             html += "</ul>"
             order.package_features_html = html
 
