@@ -1,100 +1,105 @@
 <odoo>
-    <!-- 1. INHERIT the existing report action to use our new template -->
+    <!-- 1. Report Action -->
     <record id="sale.action_report_saleorder" model="ir.actions.report">
         <field name="name">Quotation / Order (Engineering)</field>
         <field name="report_name">engineering_packages.report_saleorder_custom_document</field>
         <field name="report_file">engineering_packages.report_saleorder_custom_document</field>
     </record>
 
-    <!-- 2. DEFINE the custom PDF template design -->
+    <!-- 2. The PDF Design -->
     <template id="report_saleorder_custom_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <div class="article o_report_layout_custom_engineering">
-                    <div class="page">
+                <!-- Using Odoo's standard layout wrapper for better RTL support -->
+                <t t-call="web.basic_layout">
+                    <div class="page o_report_layout_custom_engineering" style="direction: rtl; text-align: right; font-family: 'Tajawal', sans-serif;">
                         
-                        <!-- HEADER -->
-                        <div class="custom-header-eng row">
-                            <div class="col-8">
-                                <h2 style="color: #36454F;">DYNAMIC DESIGN</h2>
-                                <h3 style="color: #555;">DYNAMIC ENGINEERING CONSULTANTS</h3>
+                        <!-- HEADER WITH LOGO FROM SETTINGS -->
+                        <div class="row custom-header-eng" style="border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 10px;">
+                            <div class="col-3">
+                                <!-- Pulling the Logo you uploaded in Settings -->
+                                <img t-if="doc.company_id.logo" t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 100px;" alt="Logo"/>
                             </div>
-                            <div class="col-4 text-left">
-                                <img src="/engineering_packages/static/src/img/logo.png" style="max-height: 80px;"/>
+                            <div class="col-9 text-right">
+                                <h2 style="margin:0; padding:0;">ديناميك للإستشارات الهندسية</h2>
+                                <h3 style="margin:0; padding:0; color: #333;">DYNAMIC ENGINEERING CONSULTANTS</h3>
                             </div>
                         </div>
 
-                        <!-- TITLE BAR -->
-                        <div class="title-bar-eng">
-                            استشاريون لتصميم وإشراف، معماري - إنشائي، مباني وإنشاءات، تصميم وإدارة مشاريع
+                        <!-- BLACK TITLE BAR -->
+                        <div style="background-color: #000; color: #fff; text-align: center; padding: 5px; font-size: 12px; margin-bottom: 20px;">
+                            إستشاريون (تصميم وإشراف) - معماري - إنشائي - مباني وإنشاءات - تصميم - إدارة مشاريع
                         </div>
 
                         <!-- DATE -->
-                        <div class="row mb-5">
-                            <div class="col-12 text-left">
-                                <strong>التاريخ:</strong> <span t-field="doc.date_order" t-options='{"widget": "date"}'/>
+                        <div class="row">
+                            <div class="col-12 text-left" style="font-size: 16px;">
+                                <strong>تاريخ: </strong> <span t-field="doc.date_order" t-options='{"widget": "date"}'/>
                             </div>
                         </div>
 
                         <!-- MAIN TITLE -->
-                        <div class="main-title-eng">
-                            عرض سعر خدمات إستشارية
+                        <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+                            <h3 style="text-decoration: underline; font-weight: bold;">عرض سعر خدمات إستشارية</h3>
                         </div>
 
-                        <!-- CUSTOMER INFO -->
-                        <div class="customer-info-eng mb-4">
-                            <p><strong>الموضوع:</strong> عرض سعر تصميم وترخيص وإشراف مبنى <span t-field="doc.building_type"/>
-                            </p>
-                            <p><strong>السادة:</strong> <span t-field="doc.partner_id.name"/></p>
-                            <p>تحية طيبة وبعد،</p>
+                        <!-- SUBJECT & CUSTOMER -->
+                        <div style="margin-bottom: 20px; line-height: 1.8;">
+                            <strong>الموضوع: </strong> عرض سعر تصميم وترخيص وإشراف مبنى <span t-field="doc.building_type"/>
+                            <br/>
+                            <strong>السادة / </strong> <span t-field="doc.partner_id.name"/> المحترمين،
+                            <br/>
+                            تحية طيبة وبعد،،،
                         </div>
 
-                        <!-- SERVICES LIST (From Package Features) -->
-                        <div class="services-list-eng mb-4" t-if="doc.package_features_html">
-                            <p>يسرنا بأن نقدم لكم عرض السعر الخاص بالخدمات التالية:</p>
-                            <!-- This t-out will render the UL/LI list correctly -->
-                            <div t-out="doc.package_features_html" style="font-size: 14px;"/>
+                        <!-- TECHNICAL DETAILS (BLOCK, PLOT, ETC) -->
+                        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; background-color: #fcfcfc;">
+                            <strong>بيانات الموقع:</strong>
+                            المنطقة: <span t-field="doc.area"/> | 
+                            القطعة: <span t-field="doc.block_no"/> | 
+                            قسيمة: <span t-field="doc.plot_no"/> | 
+                            الشارع: <span t-field="doc.street_no"/>
                         </div>
-                        
-                        <!-- PRICE -->
-                        <div class="price-eng mb-4">
-                            <strong>قيمة الأتعاب:</strong>
+
+                        <!-- SERVICES LIST -->
+                        <div style="margin-bottom: 30px;">
+                            <p>يسرنا أن نقدم لكم عرض السعر بالخدمات التالية:</p>
+                            <!-- This renders the Package Features (1, 2, 3...) -->
+                            <div t-if="doc.package_features_html" t-out="doc.package_features_html" style="margin-right: 20px;"/>
+                        </div>
+
+                        <!-- FINANCIAL TOTAL -->
+                        <div style="margin-top: 30px; font-size: 16px;">
+                            <strong>قيمة الأتعاب المالية: </strong> 
                             <span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                            (<span t-esc="doc.amount_total"/> دينار كويتي لا غير)
                         </div>
 
-                        <!-- NOTES -->
-                        <div class="notes-eng mb-4">
+                        <!-- TERMS & NOTES -->
+                        <div style="margin-top: 30px; font-size: 13px;">
                             <strong>ملاحظات:</strong>
-                            <ul>
-                                <li>عرض السعر شامل رسوم جهات الدولة.</li>
+                            <ul style="list-style-type: square;">
+                                <li>عرض السعر غير شامل رسوم جهات الدولة</li>
+                                <li>الالتزام بنظام البناء</li>
+                                <li t-if="doc.payment_term_id">شروط الدفع: <span t-field="doc.payment_term_id.name"/></li>
                             </ul>
                         </div>
 
-                        <!-- PAYMENT TERMS -->
-                        <div class="payment-terms-eng mb-5">
-                            <strong>شروط الدفع:</strong>
-                            <p t-field="doc.payment_term_id.name"/>
+                        <div style="margin-top: 40px;">
+                            مع خالص التحية والتقدير،،،
+                            <br/><br/>
+                            <strong>ديناميك ديزاين للإستشارات الهندسية</strong>
                         </div>
 
-                        <!-- CLOSING -->
-                        <div class="closing-eng">
-                            <p>مع خالص التحية والتقدير،</p>
-                            <p><strong>ديناميك ديزاين للاستشارات الهندسية</strong></p>
+                        <!-- FOOTER IMAGE -->
+                        <div class="footer" style="border-top: 1px solid black; text-align: center; font-size: 10px; padding-top: 10px;">
+                            مدينة الكويت - قبلة - شارع الصالحية - مبنى رقم (18) الدور الأول مكتب رقم (1)
+                            <br/>
+                            E-mail: info@DynamicSaud.com | Mobile: 99674300 - 50855599
                         </div>
-                        
-                        <!-- FOOTER -->
-                        <div class="custom-footer-eng row" style="position: absolute; bottom: 0; width: 100%;">
-                           <div class="col-2 text-center">
-                                <img src="/engineering_packages/static/src/img/logo.png" style="max-height: 50px;"/>
-                           </div>
-                           <div class="col-10 text-center">
-                               <span>الكويت - قبلة - قطعة 11 - شارع الصالحية - بناية 18 مكتب (1) الدور الأول</span><br/>
-                               <span>T: 22911228 - 55955599 | E-mail: info@dynamicd.com</span>
-                           </div>
-                        </div>
-                        
+
                     </div>
-                </div>
+                </t>
             </t>
         </t>
     </template>
