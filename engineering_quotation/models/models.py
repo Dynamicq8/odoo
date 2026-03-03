@@ -2,131 +2,461 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
-# Helper function for Region selection
+# Helper function to get the list of areas
 def _get_area_selection(self):
     selection_list = []
+
+    # Helper to add a governorate as a separator
     def add_governorate_separator(governorate_name):
         selection_list.append((governorate_name, '----- ' + governorate_name + ' -----'))
+
+    # Helper to add individual areas
     def add_areas(areas):
         for area_key, area_label in areas:
             selection_list.append((area_key, area_label))
 
+    # محافظة العاصمة
     add_governorate_separator('محافظة العاصمة')
-    add_areas([('جابر الاحمد', 'جابر الاحمد'), ('القبلة', 'القبلة'), ('الشرق', 'الشرق'), ('المرقاب', 'المرقاب'), ('الصالحية', 'الصالحية'), ('دسمان', 'دسمان'), ('الدعية', 'الدعية'), ('الدسمة', 'الدسمة'), ('كيفان', 'كيفان'), ('الخالدية', 'الخالدية'), ('الشامية', 'الشامية'), ('الروضة', 'الروضة'), ('العديلية', 'العديلية'), ('الفيحاء', 'الفيحاء'), ('القادسية', 'القادسية'), ('قرطبة', 'قرطبة'), ('السرة', 'السرة'), ('اليرموك', 'اليرموك'), ('النزهة', 'النزهة'), ('الشويخ الصناعية 1', 'الشويخ الصناعية 1'), ('الشويخ الصناعية 2', 'الشويخ الصناعية 2'), ('الشويخ الصناعية 3', 'الشويخ الصناعية 3'), ('الشويخ الادارية', 'الشويخ الادارية'), ('الشويخ السكنى', 'الشويخ السكنى'), ('الشويخ التعليمية', 'الشويخ التعليمية'), ('الشويخ الصحيه', 'الشويخ الصحيه'), ('الواجهه البحرية', 'الواجهه البحرية'), ('غرناطة', 'غرناطة'), ('الصليبيخات', 'الصليبيخات'), ('المنصورية', 'المنصورية'), ('الدوحة السكنيه', 'الدوحة السكنيه'), ('الرى', 'الرى'), ('ميناء الدوحة', 'ميناء الدوحة'), ('جزيره عوهه', 'جزيره عوهه'), ('جزيره فيلكه', 'جزيره فيلكه'), ('جزيره مسكان', 'جزيره مسكان'), ('حدائق السور – الحزام الاخضر', 'حدائق السور – الحزام الاخضر'), ('بنيد القار', 'بنيد القار'), ('ميناء الشويخ', 'ميناء الشويخ'), ('معسكرات المباركيه – جيوان', 'معسكرات المباركيه – جيوان'), ('شاليهات الدوحة', 'شاليهات الدوحة'), ('السره', 'السره')])
+    add_areas([
+        ('جابر الاحمد', 'جابر الاحمد'), ('القبلة', 'القبلة'), ('الشرق', 'الشرق'),
+        ('المرقاب', 'المرقاب'), ('الصالحية', 'الصالحية'), ('دسمان', 'دسمان'),
+        ('الدعية', 'الدعية'), ('الدسمة', 'الدسمة'), ('كيفان', 'كيفان'),
+        ('الخالدية', 'الخالدية'), ('الشامية', 'الشامية'), ('الروضة', 'الروضة'),
+        ('العديلية', 'العديلية'), ('الفيحاء', 'الفيحاء'), ('القادسية', 'القادسية'),
+        ('قرطبة', 'قرطبة'), ('السرة', 'السرة'), ('اليرموك', 'اليرموك'),
+        ('النزهة', 'النزهة'), ('الشويخ الصناعية 1', 'الشويخ الصناعية 1'),
+        ('الشويخ الصناعية 2', 'الشويخ الصناعية 2'), ('الشويخ الصناعية 3', 'الشويخ الصناعية 3'),
+        ('الشويخ الادارية', 'الشويخ الادارية'), ('الشويخ السكنى', 'الشويخ السكنى'),
+        ('الشويخ التعليمية', 'الشويخ التعليمية'), ('الشويخ الصحيه', 'الشويخ الصحيه'),
+        ('الواجهه البحرية', 'الواجهه البحرية'), ('غرناطة', 'غرناطة'),
+        ('الصليبيخات', 'الصليبيخات'), ('المنصورية', 'المنصورية'),
+        ('الدوحة السكنيه', 'الدوحة السكنيه'), ('الرى', 'الرى'),
+        ('ميناء الدوحة', 'ميناء الدوحة'), ('جزيره عوهه', 'جزيره عوهه'),
+        ('جزيره فيلكه', 'جزيره فيلكه'), ('جزيره مسكان', 'جزيره مسكان'),
+        ('حدائق السور – الحزام الاخضر', 'حدائق السور – الحزام الاخضر'),
+        ('بنيد القار', 'بنيد القار'), ('ميناء الشويخ', 'ميناء الشويخ'),
+        ('معسكرات المباركيه – جيوان', 'معسكرات المباركيه – جيوان'),
+        ('شاليهات الدوحة', 'شاليهات الدوحة'), ('السره', 'السره'),
+    ])
+
+    # محافظة حولي
     add_governorate_separator('محافظة حولي')
-    add_areas([('حولي', 'حولي'), ('السالمية', 'السالمية'), ('الرميثية', 'الرميثية'), ('الجابرية', 'الجابرية'), ('بيان', 'بيان'), ('مشرف', 'مشرف'), ('سلوى', 'سلوى'), ('ميدان حولي', 'ميدان حولي'), ('الزهراء', 'الزهراء'), ('الصديق', 'الصديق'), ('حطين', 'حطين'), ('السلام', 'السلام'), ('الشهداء', 'الشهداء'), ('انجفة', 'انجفة'), ('الشعب', 'الشعب'), ('مبارك العبد الله', 'مبارك العبد الله'), ('الواجهه البحريه', 'الواجهه البحريه'), ('الضاحيه الدبلوماسيه', 'الضاحيه الدبلوماسيه'), ('المباركيه قطعة 15 بيان', 'المباركيه قطعة 15 بيان'), ('البدع', 'البدع')])
+    add_areas([
+        ('حولي', 'حولي'), ('السالمية', 'السالمية'), ('الرميثية', 'الرميثية'),
+        ('الجابرية', 'الجابرية'), ('بيان', 'بيان'), ('مشرف', 'مشرف'),
+        ('سلوى', 'سلوى'), ('ميدان حولي', 'ميدان حولي'), ('الزهراء', 'الزهراء'),
+        ('الصديق', 'الصديق'), ('حطين', 'حطين'), ('السلام', 'السلام'),
+        ('الشهداء', 'الشهداء'), ('انجفة', 'انجفة'), ('الشعب', 'الشعب'),
+        ('مبارك العبد الله', 'مبارك العبد الله'), ('الواجهه البحريه', 'الواجهه البحريه'),
+        ('الضاحيه الدبلوماسيه', 'الضاحيه الدبلوماسيه'),
+        ('المباركيه قطعة 15 بيان', 'المباركيه قطعة 15 بيان'), ('البدع', 'البدع'),
+    ])
+
+    # محافظة الفروانية
     add_governorate_separator('محافظة الفروانية')
-    add_areas([('الفروانية', 'الفروانية'), ('خيطان', 'خيطان'), ('العمرية', 'العمرية'), ('الرحاب', 'الرحاب'), ('الرقعى', 'الرقعى'), ('الشدادية', 'الشدادية'), ('الضجيج', 'الضجيج'), ('المطار', 'المطار'), ('غرب الجليب الشداديه', 'غرب الجليب الشداديه'), ('عبد الله المبارك', 'عبد الله المبارك'), ('مدينه صباح السالم الجامعية', 'مدينه صباح السالم الجامعية'), ('منطقة المعارض جنوب خيطان', 'منطقة المعارض جنوب خيطان'), ('الأندلس', 'الأندلس'), ('إشبيلية', 'إشبيلية'), ('جليب الشيوخ', 'جليب الشيوخ'), ('الفردوس', 'الفردوس'), ('صباح الناصر', 'صباح الناصر'), ('الرابية', 'الرابية'), ('العارضية', 'العارضية'), ('العارضية استعمالات حكومية', 'العارضية استعمالات حكومية'), ('العارضية مخازن', 'العارضية مخازن'), ('العارضية الحرفية', 'العارضية الحرفية'), ('غرب عبد المبارك السكنى', 'غرب عبد المبارك السكنى'), ('جنوب عبد الله المبارك السكنى', 'جنوب عبد الله المبارك السكنى'), ('العباسية', 'العباسية')])
+    add_areas([
+        ('الفروانية', 'الفروانية'), ('خيطان', 'خيطان'), ('العمرية', 'العمرية'),
+        ('الرحاب', 'الرحاب'), ('الرقعى', 'الرقعى'), ('الشدادية', 'الشدادية'),
+        ('الضجيج', 'الضجيج'), ('المطار', 'المطار'),
+        ('غرب الجليب الشداديه', 'غرب الجليب الشداديه'),
+        ('عبد الله المبارك', 'عبد الله المبارك'),
+        ('مدينه صباح السالم الجامعية', 'مدينه صباح السالم الجامعية'),
+        ('منطقة المعارض جنوب خيطان', 'منطقة المعارض جنوب خيطان'),
+        ('الأندلس', 'الأندلس'), ('إشبيلية', 'إشبيلية'),
+        ('جليب الشيوخ', 'جليب الشيوخ'), ('الفردوس', 'الفردوس'),
+        ('صباح الناصر', 'صباح الناصر'), ('الرابية', 'الرابية'),
+        ('العارضية', 'العارضية'),
+        ('العارضية استعمالات حكومية', 'العارضية استعمالات حكومية'),
+        ('العارضية مخازن', 'العارضية مخازن'), ('العارضية الحرفية', 'العارضية الحرفية'),
+        ('غرب عبد المبارك السكنى', 'غرب عبد المبارك السكنى'),
+        ('جنوب عبد الله المبارك السكنى', 'جنوب عبد الله المبارك السكنى'),
+        ('العباسية', 'العباسية'),
+    ])
+
+    # محافظة الأحمدي
     add_governorate_separator('محافظة الأحمدي')
-    add_areas([('الأحمدي', 'الأحمدي'), ('الفحيحيل', 'الفحيحيل'), ('المنقف', 'المنقف'), ('أبو حليفة', 'أبو حليفة'), ('الصباحية', 'الصباحية'), ('الرقة', 'الرقة'), ('هدية', 'هدية'), ('الفنطاس', 'الفنطاس'), ('المهبولة', 'المهبولة'), ('العقيلة', 'العقيلة'), ('الظهر', 'الظهر'), ('جابر العلي', 'جابر العلي'), ('صباح الأحمد السكنية', 'صباح الأحمد السكنية'), ('الوفرة', 'الوفرة'), ('الخيران', 'الخيران'), ('ميناء الزور', 'ميناء الزور'), ('ميناء عبد الله الصناعية', 'ميناء عبد الله الصناعية'), ('ميناء عبد الله', 'ميناء عبد الله'), ('مزارع الوفره', 'مزارع الوفره'), ('صباح الاحمد السكنيه', 'صباح الاحمد السكنيه'), ('صباح الاحمد البحريه', 'صباح الاحمد البحريه'), ('قردان والحفيرة والفوار', 'قردان والحفيرة والفوار'), ('فهد الاحمد', 'فهد الاحمد'), ('على صباح السالم – ام الهيمان', 'على صباح السالم – ام الهيمان'), ('عريفجان', 'عريفجان'), ('ضليع الزنيف', 'ضليع الزنيف'), ('شرق الاحمدى الخدميه والحرفية والتجاريه', 'شرق الاحمدى الخدميه والحرفية والتجاريه'), ('شرق الاحمدى', 'شرق الاحمدى'), ('شاليهات ميناء عبد الله', 'شاليهات ميناء عبد الله'), ('شاليهات بنيدر', 'شاليهات بنيدر'), ('شاليهات النويصيب', 'شاليهات النويصيب'), ('شاليهات الضاعيه', 'شاليهات الضاعيه'), ('شاليهات الزور', 'شاليهات الزور'), ('شاليهات الخيران', 'شاليهات الخيران'), ('شاليهات الجليعه', 'شاليهات الجليعه'), ('رجم خشمان ومصلان', 'رجم خشمان ومصلان'), ('جنوب الصباحية', 'جنوب الصباحية'), ('برقان', 'برقان'), ('الوفره السكنيه', 'الوفره السكنيه'), ('الهيئة العامة للزراعة والثورة السمكيه – مزارع', 'الهيئة العامة للزراعة والثورة السمكيه – مزارع'), ('النويصيب', 'النويصيب'), ('المقوع', 'المقوع'), ('الفحيحيل', 'الفحيحيل'), ('العبدليه', 'العبدليه'), ('الصناعية الصناعية الخلط الجاهز', 'الصناعية الصناعية الخلط الجاهز'), ('الشعيبة الصناعية الشرقيه', 'الشعيبة الصناعية الشرقيه'), ('الشعيبة الصناعية الغربيه', 'الشعيبة الصناعية الغربيه'), ('الشعيبة', 'الشعيبة'), ('الشدادية الصناعية', 'الشدادية الصناعية'), ('الزور وصوله', 'الزور وصوله'), ('ام حجول', 'ام حجول'), ('ام قدير', 'ام قدير'), ('ابو خرجين والصبيحية', 'ابو خرجين والصبيحية')])
+    add_areas([
+        ('الأحمدي', 'الأحمدي'), ('الفحيحيل', 'الفحيحيل'), ('المنقف', 'المنقف'),
+        ('أبو حليفة', 'أبو حليفة'), ('الصباحية', 'الصباحية'), ('الرقة', 'الرقة'),
+        ('هدية', 'هدية'), ('الفنطاس', 'الفنطاس'), ('المهبولة', 'المهبولة'),
+        ('العقيلة', 'العقيلة'), ('الظهر', 'الظهر'), ('جابر العلي', 'جابر العلي'),
+        ('صباح الأحمد السكنية', 'صباح الأحمد السكنية'), ('الوفرة', 'الوفرة'),
+        ('الخيران', 'الخيران'), ('ميناء الزور', 'ميناء الزور'),
+        ('ميناء عبد الله الصناعية', 'ميناء عبد الله الصناعية'),
+        ('ميناء عبد الله', 'ميناء عبد الله'), ('مزارع الوفره', 'مزارع الوفره'),
+        ('صباح الاحمد السكنيه', 'صباح الاحمد السكنيه'),
+        ('صباح الاحمد البحريه', 'صباح الاحمد البحريه'),
+        ('قردان والحفيرة والفوار', 'قردان والحفيرة والفوار'),
+        ('فهد الاحمد', 'فهد الاحمد'),
+        ('على صباح السالم – ام الهيمان', 'على صباح السالم – ام الهيمان'),
+        ('عريفجان', 'عريفجان'), ('ضليع الزنيف', 'ضليع الزنيف'),
+        ('شرق الاحمدى الخدميه والحرفية والتجاريه', 'شرق الاحمدى الخدميه والحرفية والتجاريه'),
+        ('شرق الاحمدى', 'شرق الاحمدى'),
+        ('شاليهات ميناء عبد الله', 'شاليهات ميناء عبد الله'),
+        ('شاليهات بنيدر', 'شاليهات بنيدر'),
+        ('شاليهات النويصيب', 'شاليهات النويصيب'),
+        ('شاليهات الضاعيه', 'شاليهات الضاعيه'), ('شاليهات الزور', 'شاليهات الزور'),
+        ('شاليهات الخيران', 'شاليهات الخيران'),
+        ('شاليهات الجليعه', 'شاليهات الجليعه'),
+        ('رجم خشمان ومصلان', 'رجم خشمان ومصلان'),
+        ('جنوب الصباحية', 'جنوب الصباحية'), ('برقان', 'برقان'),
+        ('الوفره السكنيه', 'الوفره السكنيه'),
+        ('الهيئة العامة للزراعة والثورة السمكيه – مزارع', 'الهيئة العامة للزراعة والثورة السمكيه – مزارع'),
+        ('النويصيب', 'النويصيب'), ('المقوع', 'المقوع'), ('الفحيحيل', 'الفحيحيل'),
+        ('العبدليه', 'العبدليه'),
+        ('الصناعية الصناعية الخلط الجاهز', 'الصناعية الصناعية الخلط الجاهز'),
+        ('الشعيبة الصناعية الشرقيه', 'الشعيبة الصناعية الشرقيه'),
+        ('الشعيبة الصناعية الغربيه', 'الشعيبة الصناعية الغربيه'),
+        ('الشعيبة', 'الشعيبة'), ('الشدادية الصناعية', 'الشدادية الصناعية'),
+        ('الزور وصوله', 'الزور وصوله'), ('ام حجول', 'ام حجول'),
+        ('ام قدير', 'ام قدير'), ('ابو خرجين والصبيحية', 'ابو خرجين والصبيحية'),
+    ])
+
+    # محافظة الجهراء
     add_governorate_separator('محافظة الجهراء')
-    add_areas([('الجهراء', 'الجهراء'), ('القصر', 'القصر'), ('النسيم', 'النسيم'), ('الواحة', 'الواحة'), ('النعيم', 'النعيم'), ('تيماء', 'تيماء'), ('سعد العبدالله', 'سعد العبدالله'), ('الصليبية', 'الصليبية'), ('كبد', 'كبد'), ('المطلاع', 'المطلاع'), ('أمغرة', 'أمغرة'), ('البحيث', 'البحيث'), ('الجهراء الصناعية الثانية', 'الجهراء الصناعية الثانية'), ('الجهراء الصناعية الحرفيه الاولى', 'الجهراء الصناعية الحرفيه الاولى'), ('الرتقة والحريجه', 'الرتقة والحريجه'), ('الرحية وام توينج', 'الرحية وام توينج'), ('الروضتين', 'الروضتين'), ('السالمى', 'السالمى'), ('السكراب', 'السكراب'), ('الشقايا – الدبدبة – المتياهه', 'الشقايا – الدبدبة – المتياهه'), ('الصابرية – العرفجية', 'الصابرية – العرفجية'), ('الصبية', 'الصبية'), ('الصليبية الزراعية', 'الصليبية الزراعية'), ('الصليبيه السكنية', 'الصليبيه السكنية'), ('الصليبية الصناعية 2', 'الصليبية الصناعية 2'), ('الصليبيه الصناعية 1', 'الصليبيه الصناعية 1'), ('الصير وام المدفاع', 'الصير وام المدفاع'), ('العبدلى', 'العبدلى'), ('العبدلى وصخيبريات', 'العبدلى وصخيبريات'), ('العيون', 'العيون'), ('القيروان – جنوب الدوحة', 'القيروان – جنوب الدوحة'), ('المستثمر الاجنبى (منطقة العبدلى الاقتصادية )', 'المستثمر الاجنبى (منطقة العبدلى الاقتصادية )'), ('المطلاع وجال الاطراف', 'المطلاع وجال الاطراف'), ('النعايم الصناعية', 'النعايم الصناعية'), ('النهضة – شرق الصليبخات', 'النهضة – شرق الصليبخات'), ('امغره الصناعية', 'امغره الصناعية'), ('تيماء', 'تيماء'), ('جال الزور', 'جال الزور'), ('جزيرة ام المرادم', 'جزيرة ام المرادم'), ('جزيره ام النمل', 'جزيره ام النمل'), ('جزيرة بوبيان', 'جزيرة بوبيان'), ('جزيرة قارووه', 'جزيرة قارووه'), ('جزيرة كبر', 'جزيرة كبر'), ('جزيرة وربة', 'جزيرة وربة'), ('جنوب امغرة', 'جنوب امغرة'), ('شرق الجهراء', 'شرق الجهراء'), ('شرق تيماء', 'شرق تيماء'), ('شمال غرب الجهراء', 'شمال غرب الجهراء'), ('قلمة شايع والمناقيش', 'قلمة شايع والمناقيش'), ('كاظمة', 'كاظمة'), ('كبد والشق والضبعة', 'كبد والشق والضبعة'), ('معسكرات الجهراء', 'معسكرات الجهراء'), ('مقبرة', 'مقبرة'), ('مناطق نائية -الجهراء', 'مناطق نائية -الجهراء')])
+    add_areas([
+        ('الجهراء', 'الجهراء'), ('القصر', 'القصر'), ('النسيم', 'النسيم'),
+        ('الواحة', 'الواحة'), ('النعيم', 'النعيم'), ('تيماء', 'تيماء'),
+        ('سعد العبدالله', 'سعد العبدالله'), ('الصليبية', 'الصليبية'),
+        ('كبد', 'كبد'), ('المطلاع', 'المطلاع'), ('أمغرة', 'أمغرة'),
+        ('البحيث', 'البحيث'), ('الجهراء الصناعية الثانية', 'الجهراء الصناعية الثانية'),
+        ('الجهراء الصناعية الحرفيه الاولى', 'الجهراء الصناعية الحرفيه الاولى'),
+        ('الرتقة والحريجه', 'الرتقة والحريجه'),
+        ('الرحية وام توينج', 'الرحية وام توينج'), ('الروضتين', 'الروضتين'),
+        ('السالمى', 'السالمى'), ('السكراب', 'السكراب'),
+        ('الشقايا – الدبدبة – المتياهه', 'الشقايا – الدبدبة – المتياهه'),
+        ('الصابرية – العرفجية', 'الصابرية – العرفجية'),
+        ('الصبية', 'الصبية'), ('الصليبية الزراعية', 'الصليبية الزراعية'),
+        ('الصليبيه السكنية', 'الصليبيه السكنية'),
+        ('الصليبية الصناعية 2', 'الصليبية الصناعية 2'),
+        ('الصليبيه الصناعية 1', 'الصليبيه الصناعية 1'),
+        ('الصير وام المدفاع', 'الصير وام المدفاع'), ('العبدلى', 'العبدلى'),
+        ('العبدلى وصخيبريات', 'العبدلى وصخيبريات'), ('العيون', 'العيون'),
+        ('القيروان – جنوب الدوحة', 'القيروان – جنوب الدوحة'),
+        ('المستثمر الاجنبى (منطقة العبدلى الاقتصادية )', 'المستثمر الاجنبى (منطقة العبدلى الاقتصادية )'),
+        ('المطلاع وجال الاطراف', 'المطلاع وجال الاطراف'),
+        ('النعايم الصناعية', 'النعايم الصناعية'),
+        ('النهضة – شرق الصليبخات', 'النهضة – شرق الصليبخات'),
+        ('امغره الصناعية', 'امغره الصناعية'), ('تيماء', 'تيماء'),
+        ('جال الزور', 'جال الزور'), ('جزيرة ام المرادم', 'جزيرة ام المرادم'),
+        ('جزيره ام النمل', 'جزيره ام النمل'), ('جزيرة بوبيان', 'جزيرة بوبيان'),
+        ('جزيرة قارووه', 'جزيرة قارووه'), ('جزيرة كبر', 'جزيرة كبر'),
+        ('جزيرة وربة', 'جزيرة وربة'), ('جنوب امغرة', 'جنوب امغرة'),
+        ('شرق الجهراء', 'شرق الجهراء'), ('شرق تيماء', 'شرق تيماء'),
+        ('شمال غرب الجهراء', 'شمال غرب الجهراء'),
+        ('قلمة شايع والمناقيش', 'قلمة شايع والمناقيش'),
+        ('كاظمة', 'كاظمة'), ('كبد والشق والضبعة', 'كبد والشق والضبعة'),
+        ('معسكرات الجهراء', 'معسكرات الجهراء'), ('مقبرة', 'مقبرة'),
+        ('مناطق نائية -الجهراء', 'مناطق نائية -الجهراء'),
+    ])
+
+    # محافظة مبارك الكبير
     add_governorate_separator('محافظة مبارك الكبير')
-    add_areas([('مبارك الكبير', 'مبارك الكبير'), ('العدان', 'العدان'), ('القرين', 'القرين'), ('القصور', 'القصور'), ('المسيلة', 'المسيلة'), ('غرب أبو فطيرة', 'غرب أبو فطيرة'), ('الفنيطيس', 'الفنيطيس'), ('المسايل', 'المسايل'), ('الوسطى', 'الوسطى'), ('جنوب الوسطى', 'جنوب الوسطى'), ('صباح السالم', 'صباح السالم'), ('صبحان الصناعية', 'صبحان الصناعية'), ('ضاحية ابو فطيرة', 'ضاحية ابو فطيرة'), ('ابو الحصانية', 'ابو الحصانية')])
+    add_areas([
+        ('مبارك الكبير', 'مبارك الكبير'), ('العدان', 'العدان'),
+        ('القرين', 'القرين'), ('القصور', 'القصور'), ('المسيلة', 'المسيلة'),
+        ('غرب أبو فطيرة', 'غرب أبو فطيرة'), ('الفنيطيس', 'الفنيطيس'),
+        ('المسايل', 'المسايل'), ('الوسطى', 'الوسطى'),
+        ('جنوب الوسطى', 'جنوب الوسطى'), ('صباح السالم', 'صباح السالم'),
+        ('صبحان الصناعية', 'صبحان الصناعية'),
+        ('ضاحية ابو فطيرة', 'ضاحية ابو فطيرة'), ('ابو الحصانية', 'ابو الحصانية'),
+    ])
+
     return selection_list
 
-# Stages & History Models (As they were)
 class EngineeringQuotationStage(models.Model):
     _name = 'engineering.quotation.stage'
     _description = 'Engineering Quotation Stage'
     _order = 'sequence, id'
-    name = fields.Char(string='اسم المرحلة', required=True)
+
+    name = fields.Char(string='اسم المرحلة (Stage Name)', required=True, translate=True)
     sequence = fields.Integer(default=10)
-    next_stage_id = fields.Many2one('engineering.quotation.stage', string="المرحلة التالية")
-    button_name = fields.Char(string="نص الزر")
-    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟")
-    is_rejected_stage = fields.Boolean(string="مرحلة الرفض؟")
-    fold = fields.Boolean(default=False)
+    next_stage_id = fields.Many2one('engineering.quotation.stage', string="المرحلة التالية (Next Stage)")
+    button_name = fields.Char(string="نص الزر (Button Label)", help="Text for the button to move to Next Stage.")
+    
+    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟ (Is Approved Stage?)", 
+                                        help="Moving to this stage triggers Project Creation")
+    is_rejected_stage = fields.Boolean(string="مرحلة الرفض؟ (Is Rejected Stage?)")
+    fold = fields.Boolean(string='Folded in Kanban', default=False)
 
 class EngineeringQuotationStageHistory(models.Model):
     _name = 'engineering.quotation.stage.history'
     _description = 'Quotation Stage History'
     _order = 'change_date desc'
-    quotation_id = fields.Many2one('sale.order', ondelete='cascade')
-    from_stage_id = fields.Many2one('engineering.quotation.stage')
-    to_stage_id = fields.Many2one('engineering.quotation.stage')
-    changed_by_id = fields.Many2one('res.users', default=lambda self: self.env.user)
-    change_date = fields.Datetime(default=fields.Datetime.now)
 
-# MAIN SALE ORDER CLASS
+    quotation_id = fields.Many2one('sale.order', string='Quotation', ondelete='cascade')
+    from_stage_id = fields.Many2one('engineering.quotation.stage', string='From Stage')
+    to_stage_id = fields.Many2one('engineering.quotation.stage', string='To Stage')
+    changed_by_id = fields.Many2one('res.users', string='Changed By', default=lambda self: self.env.user)
+    change_date = fields.Datetime(string='Change Date', default=fields.Datetime.now)
+
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
-    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
-    plot_no = fields.Char(string="رقم القسيمة")
-    block_no = fields.Char(string="القطعة")
-    street_no = fields.Char(string="الشارع")
-    area = fields.Char(string="مساحة الارض")
-    region = fields.Selection(_get_area_selection, string="المنطقة (Region)")
+    # --- Basic Fields ---
+    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار", store=True)
+    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة", store=True)
 
+    plot_no = fields.Char(string="رقم القسيمة", store=True)
+    block_no = fields.Char(string="القطعة", store=True)
+    street_no = fields.Char(string="الشارع", store=True)
+    area = fields.Char(string="مساحة الارض", store=True)
+    # The Region Field
+    region = fields.Selection(_get_area_selection, string="المنطقة (Region)", store=True)
+
+    # --- Project Link ---
     project_id = fields.Many2one('project.project', string='Project', copy=False)
-    quotation_stage_id = fields.Many2one('engineering.quotation.stage', string='Quotation Stage', tracking=True)
     
-    # Required Docs, Invoicing logic etc. remains same ...
-    required_documents = fields.Html(compute='_compute_required_documents', store=True)
+    # --- Stages & History Fields ---
+    quotation_stage_id = fields.Many2one(
+        'engineering.quotation.stage',
+        string='Quotation Stage',
+        tracking=True,
+        default=lambda self: self.env['engineering.quotation.stage'].search([], order='sequence', limit=1)
+    )
+    stage_history_ids = fields.One2many(
+        'engineering.quotation.stage.history',
+        'quotation_id',
+        string='Stage History'
+    )
+    
+    next_stage_button_name = fields.Char(compute='_compute_next_stage_button_name')
+    show_next_stage_button = fields.Boolean(compute='_compute_next_stage_button_name')
+
+    # --- Required Documents Logic ---
+    required_documents = fields.Html(
+        string="المستندات المطلوبة (Required Documents)",
+        compute='_compute_required_documents',
+        store=True
+    )
 
     @api.depends('service_type', 'building_type')
     def _compute_required_documents(self):
         for order in self:
-            docs = "<ul><li>البطاقة المدنية للمالك (Civil ID Copy)</li></ul>"
+            docs = "<ul>"
+            docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
+            
+            if order.service_type == 'new_construction':
+                docs += "<li>وثيقة الملكية (Title Deed)</li><li>كتاب التخصيص (Allocation Letter)</li><li>مخطط المساحة (Survey Plan)</li>"
+            elif order.service_type in ['modification', 'extension', 'extension_modification']:
+                docs += "<li>رخصة البناء الأصلية (Original Building Permit)</li><li>المخططات المعمارية والإنشائية المرخصة (Original Plans)</li><li>وثيقة البيت (House Document)</li>"
+            elif order.service_type == 'demolition':
+                docs += "<li>كتاب براءة ذمة من الكهرباء والماء (Clearance Certificate)</li><li>رخصة البناء القديمة (Old Permit)</li>"
+            
+            docs += "</ul>"
             order.required_documents = docs
 
+    # --- 50 KD Opening Fee Logic ---
+    def action_create_opening_fee_invoice(self):
+        self.ensure_one()
+        product_fee = self.env['product.product'].search([('name', '=', 'رسوم فتح ملف')], limit=1)
+        if not product_fee:
+            product_fee = self.env['product.product'].create({'name': 'رسوم فتح ملف', 'type': 'service', 'list_price': 50.0})
+
+        invoice_vals = {
+            'move_type': 'out_invoice',
+            'partner_id': self.partner_id.id,
+            'invoice_date': fields.Date.today(),
+            'invoice_line_ids': [(0, 0, {'product_id': product_fee.id, 'quantity': 1, 'price_unit': 50.0, 'name': 'رسوم فتح ملف وتصميم مبدئي'})],
+        }
+        invoice = self.env['account.move'].create(invoice_vals)
+        return {'name': _('Open Invoice'), 'view_mode': 'form', 'res_model': 'account.move', 'res_id': invoice.id, 'type': 'ir.actions.act_window'}
+
+    def action_apply_opening_deduction(self):
+        self.ensure_one()
+        product_fee = self.env['product.product'].search([('name', '=', 'رسوم فتح ملف')], limit=1)
+        if not product_fee: raise UserError(_("Product 'رسوم فتح ملف' not found."))
+        
+        self.env['sale.order.line'].create({
+            'order_id': self.id,
+            'product_id': product_fee.id,
+            'name': 'خصم رسوم فتح ملف (Deduction of File Opening Fees)',
+            'product_uom_qty': 1,
+            'price_unit': -50.0,
+            'tax_id': False,
+        })
+        return True
+
+    # ---------------------------------------------------------
+    # CORE LOGIC: Approval & Project Creation
+    # ---------------------------------------------------------
+
     def action_confirm(self):
-        res = super(SaleOrder, self).action_confirm()
-        return res
+        for order in self:
+            if not order.building_type:
+                continue
+
+            approved_stage = self.env['engineering.quotation.stage'].search([('is_approved_stage', '=', True)], limit=1)
+
+            if order.signature:
+                if approved_stage and order.quotation_stage_id != approved_stage:
+                    self.env['engineering.quotation.stage.history'].create({
+                        'quotation_id': order.id,
+                        'from_stage_id': order.quotation_stage_id.id if order.quotation_stage_id else False,
+                        'to_stage_id': approved_stage.id,
+                    })
+                    order.quotation_stage_id = approved_stage.id
+
+            elif order.quotation_stage_id and not order.quotation_stage_id.is_approved_stage:
+                raise UserError(_("لا يمكن تأكيد عرض السعر يدوياً حتى يتم الموافقة عليه (Approved) أو توقيعه من قبل العميل.\nYou cannot confirm the quotation until it is in an 'Approved' stage or signed by the customer."))
+        
+        return super(SaleOrder, self).action_confirm()
 
     def action_move_to_next_stage(self):
         self.ensure_one()
-        if self.quotation_stage_id.next_stage_id:
-            self.quotation_stage_id = self.quotation_stage_id.next_stage_id.id
-        return True
+        current_stage = self.quotation_stage_id
+        next_stage = current_stage.next_stage_id if current_stage else False
+        
+        if next_stage:
+            self.env['engineering.quotation.stage.history'].create({
+                'quotation_id': self.id,
+                'from_stage_id': current_stage.id if current_stage else False,
+                'to_stage_id': next_stage.id,
+            })
+            
+            self.write({'quotation_stage_id': next_stage.id})
+
+            if next_stage.is_approved_stage:
+                return {
+                    'effect': {
+                        'fadeout': 'slow',
+                        'message': _('تمت الموافقة على عرض السعر! يمكنك الآن إنشاء المشروع والعقد.\nQuotation Approved! You can now create the project and contract.'),
+                        'type': 'rainbow_man',
+                    }
+                }
+
+            return {'type': 'ir.actions.client', 'tag': 'reload'}
+        else:
+            raise UserError(_("لا توجد مرحلة تالية محددة.\nNo next stage defined."))
 
     def action_create_project_from_quotation(self):
         self.ensure_one()
-        if self.project_id:
-            raise UserError(_("Project already exists."))
         
-        # EXPLICITLY CREATE PROJECT AND PASS ALL VALUES
-        project_vals = {
-            'name': f"{self.name} - {self.partner_id.name}",
-            'partner_id': self.partner_id.id,
-            'sale_order_id': self.id,
-            'building_type': self.building_type,
-            'service_type': self.service_type,
-            'region': self.region,
-            'plot_no': self.plot_no,
-            'block_no': self.block_no,
-            'street_no': self.street_no,
-            'area': self.area,
-        }
-        project = self.env['project.project'].create(project_vals)
-        self.project_id = project.id
+        if not self.quotation_stage_id or not self.quotation_stage_id.is_approved_stage:
+            raise UserError(_("يجب الموافقة على عرض السعر أولاً قبل إنشاء المشروع.\nQuotation must be approved before creating a project."))
+        
+        if self.project_id:
+            raise UserError(_("يوجد مشروع مرتبط بهذا العرض بالفعل.\nA project already exists for this quotation."))
+        
+        if self.state in ['draft', 'sent']:
+            self.action_confirm()
+        
+        project = self._create_engineering_project()
         
         return {
             'type': 'ir.actions.act_window',
+            'name': _('المشروع (Project)'),
             'res_model': 'project.project',
             'res_id': project.id,
             'view_mode': 'form',
             'target': 'current',
         }
 
-# PROJECT MODEL (FAIL-PROOF VERSION)
+    def _create_engineering_project(self):
+        self.ensure_one()
+        if self.project_id:
+            return self.project_id
+
+        # Use fields directly from self
+        project_vals = {
+            'name': f"{self.name} - {self.partner_id.name}",
+            'partner_id': self.partner_id.id,
+            'sale_order_id': self.id,
+            'building_type': self.building_type,
+            'service_type': self.service_type,
+            'plot_no': self.plot_no,
+            'block_no': self.block_no,
+            'street_no': self.street_no,
+            'area': self.area,
+            'region': self.region,
+        }
+        project = self.env['project.project'].create(project_vals)
+        
+        stages = ['التصميم المبدئي (الكروكي)', 'التعاقد وجمع الوثائق', 'الموافقات الخارجية', 'التصميمات التفصيلية', 'الإشراف الهندسي', 'إنهاء المشروع']
+        project_stage_model = self.env['project.task.type']
+        for index, stage_name in enumerate(stages):
+            project_stage_model.create({
+                'name': stage_name, 
+                'project_ids': [(4, project.id)], 
+                'sequence': index + 1
+            })
+            
+        self.write({'project_id': project.id})
+        return project
+
+    # --- Button Visibility Helper ---
+    @api.depends('quotation_stage_id')
+    def _compute_next_stage_button_name(self):
+        for order in self:
+            if order.quotation_stage_id and order.quotation_stage_id.next_stage_id and order.state != 'cancel':
+                order.next_stage_button_name = order.quotation_stage_id.button_name
+                order.show_next_stage_button = True
+            else:
+                order.next_stage_button_name = False
+                order.show_next_stage_button = False
+
+    # --- WhatsApp ---
+    def action_send_quotation_whatsapp(self):
+        self.ensure_one()
+        customer_phone = self.partner_id.mobile or self.partner_id.phone
+        if not customer_phone:
+            raise UserError(_("Please add a mobile number for the customer."))
+
+        cleaned_phone = ''.join(filter(str.isdigit, customer_phone))
+
+        if not self.access_token:
+            self._portal_ensure_token()
+
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+        portal_path = self.get_portal_url()
+        full_link = base_url.rstrip('/') + portal_path
+
+        msg_text = _("مرحباً %s،\nيرجى مراجعة عرض السعر %s عبر الرابط التالي:\n%s") % (self.partner_id.name, self.name, full_link)
+        
+        import urllib.parse
+        encoded_msg = urllib.parse.quote(msg_text)
+        
+        whatsapp_url = f"https://web.whatsapp.com/send?phone={cleaned_phone}&text={encoded_msg}"
+        
+        return {'type': 'ir.actions.act_url', 'url': whatsapp_url, 'target': 'new'}
+
+# ==========================================
+# PROJECT AND TASK MODELS (At the bottom)
+# ==========================================
+
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    sale_order_id = fields.Many2one('sale.order', string='Source Quotation')
+    sale_order_id = fields.Many2one('sale.order', string='Source Quotation', readonly=True)
     
-    # THESE ARE NOW INDEPENDENT FIELDS, NOT RELATED
-    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
-    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
-    region = fields.Selection(_get_area_selection, string="المنطقة (Region)")
-    plot_no = fields.Char(string="رقم القسيمة")
-    block_no = fields.Char(string="القطعة")
-    street_no = fields.Char(string="الشارع")
-    area = fields.Char(string="مساحة الارض")
+    # Engineering specific fields
+    building_type = fields.Selection(related='sale_order_id.building_type', store=True, string="نوع المبنى")
+    service_type = fields.Selection(related='sale_order_id.service_type', store=True, string="نوع الخدمة")
+    
+    # --- ADDED REGION HERE ---
+    region = fields.Selection(related='sale_order_id.region', store=True, string="المنطقة (Region)")
+    
+    plot_no = fields.Char(related='sale_order_id.plot_no', store=True, string="رقم القسيمة")
+    block_no = fields.Char(related='sale_order_id.block_no', store=True, string="القطعة")
+
+    # --- ADDED STREET NO HERE ---
+    street_no = fields.Char(related='sale_order_id.street_no', store=True, string="الشارع")
+
+    area = fields.Char(related='sale_order_id.area', store=True, string="المساحة (Area)")
+
 
 class ProjectTask(models.Model):
     _inherit = 'project.task'
+
     def action_view_parent_project(self):
-        return {'type': 'ir.actions.act_window', 'res_model': 'project.project', 'res_id': self.project_id.id, 'view_mode': 'form'}
+        self.ensure_one()
+        if not self.project_id:
+            raise UserError(_("This task is not linked to any Project."))
+        
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'project.project',
+            'res_id': self.project_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
