@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+import urllib.parse
 
-# Helper function to get the list of areas - GLOBAL FUNCTION
-def _get_area_selection():
+# Helper function to get the list of areas
+def _get_area_selection(self):
     selection_list = []
 
     # Helper to add a governorate as a separator
@@ -175,9 +176,11 @@ class EngineeringQuotationStage(models.Model):
     next_stage_id = fields.Many2one('engineering.quotation.stage', string="المرحلة التالية (Next Stage)")
     button_name = fields.Char(string="نص الزر (Button Label)", help="Text for the button to move to Next Stage.")
     
-    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟ (Is Approved Stage?)")
+    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟ (Is Approved Stage?)", 
+                                        help="Moving to this stage triggers Project Creation")
     is_rejected_stage = fields.Boolean(string="مرحلة الرفض؟ (Is Rejected Stage?)")
     fold = fields.Boolean(string='Folded in Kanban', default=False)
+
 
 class EngineeringQuotationStageHistory(models.Model):
     _name = 'engineering.quotation.stage.history'
@@ -190,9 +193,11 @@ class EngineeringQuotationStageHistory(models.Model):
     changed_by_id = fields.Many2one('res.users', string='Changed By', default=lambda self: self.env.user)
     change_date = fields.Datetime(string='Change Date', default=fields.Datetime.now)
 
+
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
+    # --- Basic Fields ---
     building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار", store=True)
     service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة", store=True)
 
@@ -200,10 +205,13 @@ class SaleOrder(models.Model):
     block_no = fields.Char(string="القطعة", store=True)
     street_no = fields.Char(string="الشارع", store=True)
     area = fields.Char(string="مساحة الارض", store=True)
+    # The Region Field
     region = fields.Selection(_get_area_selection, string="المنطقة (Region)", store=True)
 
+    # --- Project Link ---
     project_id = fields.Many2one('project.project', string='Project', copy=False)
     
+    # --- Stages & History Fields ---
     quotation_stage_id = fields.Many2one(
         'engineering.quotation.stage',
         string='Quotation Stage',
@@ -219,6 +227,7 @@ class SaleOrder(models.Model):
     next_stage_button_name = fields.Char(compute='_compute_next_stage_button_name')
     show_next_stage_button = fields.Boolean(compute='_compute_next_stage_button_name')
 
+    # --- Required Documents Logic ---
     required_documents = fields.Html(
         string="المستندات المطلوبة (Required Documents)",
         compute='_compute_required_documents',
@@ -241,6 +250,7 @@ class SaleOrder(models.Model):
             docs += "</ul>"
             order.required_documents = docs
 
+    # --- 50 KD Opening Fee Logic ---
     def action_create_opening_fee_invoice(self):
         self.ensure_one()
         product_fee = self.env['product.product'].search([('name', '=', 'رسوم فتح ملف')], limit=1)
@@ -271,6 +281,10 @@ class SaleOrder(models.Model):
         })
         return True
 
+    # ---------------------------------------------------------
+    # CORE LOGIC: Approval & Project Creation
+    # ---------------------------------------------------------
+
     def action_confirm(self):
         for order in self:
             if not order.building_type:
@@ -288,7 +302,7 @@ class SaleOrder(models.Model):
                     order.quotation_stage_id = approved_stage.id
 
             elif order.quotation_stage_id and not order.quotation_stage_id.is_approved_stage:
-                raise UserError(_("لا يمكن تأكيد عرض السعر يدوياً حتى يتم الموافقة عليه (Approved) أو توقيعه من قبل العميل."))
+                raise UserError(_("لا يمكن تأكيد عرض السعر يدوياً حتى يتم الموافقة عليه (Approved) أو توقيعه من قبل العميل.\nYou cannot confirm the quotation until it is in an 'Approved' stage or signed by the customer."))
         
         return super(SaleOrder, self).action_confirm()
 
@@ -310,7 +324,7 @@ class SaleOrder(models.Model):
                 return {
                     'effect': {
                         'fadeout': 'slow',
-                        'message': _('تمت الموافقة على عرض السعر! يمكنك الآن إنشاء المشروع والعقد.'),
+                        'message': _('تمت الموافقة على عرض السعر! يمكنك الآن إنشاء المشروع والعقد.\nQuotation Approved! You can now create the project and contract.'),
                         'type': 'rainbow_man',
                     }
                 }
@@ -347,7 +361,7 @@ class SaleOrder(models.Model):
         if self.project_id:
             return self.project_id
 
-        # Pass related fields explicitly to ensure they are set on creation
+        # Use fields directly from self
         project_vals = {
             'name': f"{self.name} - {self.partner_id.name}",
             'partner_id': self.partner_id.id,
@@ -374,7 +388,8 @@ class SaleOrder(models.Model):
         self.write({'project_id': project.id})
         return project
 
-    # Added state to dependencies to fix button visibility logic
+    # --- Button Visibility Helper ---
+    # FIXED: Kept state and next_stage_id in dependencies to ensure button updates correctly
     @api.depends('quotation_stage_id', 'quotation_stage_id.next_stage_id', 'state')
     def _compute_next_stage_button_name(self):
         for order in self:
@@ -385,6 +400,7 @@ class SaleOrder(models.Model):
                 order.next_stage_button_name = False
                 order.show_next_stage_button = False
 
+    # --- WhatsApp ---
     def action_send_quotation_whatsapp(self):
         self.ensure_one()
         customer_phone = self.partner_id.mobile or self.partner_id.phone
@@ -402,13 +418,15 @@ class SaleOrder(models.Model):
 
         msg_text = _("مرحباً %s،\nيرجى مراجعة عرض السعر %s عبر الرابط التالي:\n%s") % (self.partner_id.name, self.name, full_link)
         
-        import urllib.parse
         encoded_msg = urllib.parse.quote(msg_text)
         
         whatsapp_url = f"https://web.whatsapp.com/send?phone={cleaned_phone}&text={encoded_msg}"
         
         return {'type': 'ir.actions.act_url', 'url': whatsapp_url, 'target': 'new'}
 
+# ==========================================
+# PROJECT AND TASK MODELS (At the bottom)
+# ==========================================
 
 class ProjectProject(models.Model):
     _inherit = 'project.project'
@@ -416,13 +434,19 @@ class ProjectProject(models.Model):
     sale_order_id = fields.Many2one('sale.order', string='Source Quotation', readonly=True)
     
     # Engineering specific fields
-    building_type = fields.Selection(related='sale_order_id.building_type', store=True, string="نوع العقار")
+    building_type = fields.Selection(related='sale_order_id.building_type', store=True, string="نوع المبنى")
     service_type = fields.Selection(related='sale_order_id.service_type', store=True, string="نوع الخدمة")
+    
+    # --- ADDED REGION HERE ---
     region = fields.Selection(related='sale_order_id.region', store=True, string="المنطقة (Region)")
+    
     plot_no = fields.Char(related='sale_order_id.plot_no', store=True, string="رقم القسيمة")
     block_no = fields.Char(related='sale_order_id.block_no', store=True, string="القطعة")
+
+    # --- ADDED STREET NO HERE ---
     street_no = fields.Char(related='sale_order_id.street_no', store=True, string="الشارع")
-    area = fields.Char(related='sale_order_id.area', store=True, string="مساحة الارض")
+
+    area = fields.Char(related='sale_order_id.area', store=True, string="المساحة (Area)")
 
 
 class ProjectTask(models.Model):
