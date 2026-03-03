@@ -15,6 +15,7 @@
                 <!-- Location Details Section - Focus on forcing vertical stacking here -->
                 <group string="تفاصيل الموقع (Location Details)">
                     <!-- Forcing each field to take a full line -->
+                    <field name="region"/>  <!-- ADDED THIS LINE FOR THE NEW FIELD -->
                     <field name="area"/>
                     <field name="block_no"/>
                     <field name="street_no"/>
