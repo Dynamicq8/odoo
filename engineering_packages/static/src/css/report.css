@@ -1,0 +1,59 @@
+/* engineering_packages/static/src/css/report.css */
+
+/* Import a professional Arabic font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+
+/* Apply styles to the entire report page */
+.o_report_layout_custom_engineering {
+    font-family: 'Tajawal', sans-serif !important;
+    direction: rtl; /* Right-to-Left for Arabic */
+    text-align: right;
+    font-size: 14px; /* Adjust base font size */
+    color: #333;
+    background-image: url('/engineering_packages/static/src/img/background.png'); /* The faint background */
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* Custom Header Style */
+.custom-header-eng {
+    padding-bottom: 15px;
+    border-bottom: 3px solid #333;
+    margin-bottom: 20px;
+}
+
+/* Custom Footer Style */
+.custom-footer-eng {
+    padding-top: 15px;
+    border-top: 3px solid #333;
+    font-size: 10px;
+}
+
+/* The dark title bar */
+.title-bar-eng {
+    background-color: #36454F; /* Dark Charcoal color */
+    color: white;
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 40px;
+}
+
+/* The main title "عرض سعر..." */
+.main-title-eng {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 30px;
+}
+
+/* The numbered list for services */
+.services-list-eng ol {
+    list-style-type: decimal;
+    padding-right: 20px; /* Indent the list */
+}
+
+.services-list-eng li {
+    margin-bottom: 8px; /* Space between list items */
+}
