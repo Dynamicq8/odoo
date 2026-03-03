@@ -11,13 +11,17 @@ class ProjectProject(models.Model):
     building_type = fields.Selection(related='sale_order_id.building_type', store=True, string="نوع المبنى")
     service_type = fields.Selection(related='sale_order_id.service_type', store=True, string="نوع الخدمة")
     
-    # --- ADDED REGION HERE ---
+    # Region
     region = fields.Selection(related='sale_order_id.region', store=True, string="المنطقة (Region)")
     
+    # Location Details
     plot_no = fields.Char(related='sale_order_id.plot_no', store=True, string="رقم القسيمة")
     block_no = fields.Char(related='sale_order_id.block_no', store=True, string="القطعة")
     
-    # I changed the string here to 'المساحة' so it doesn't conflict with the new Region field
+    # --- THIS WAS MISSING ---
+    street_no = fields.Char(related='sale_order_id.street_no', store=True, string="الشارع") 
+    # ------------------------
+
     area = fields.Char(related='sale_order_id.area', store=True, string="المساحة (Area)")
 
 
