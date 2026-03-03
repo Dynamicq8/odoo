@@ -28,6 +28,8 @@
         'views/product_views.xml',
         'views/sale_order_views.xml',
         'views/sale_portal_templates.xml',     # <-- ADDED THIS
+                'views/sale_report_templates.xml',   # <--- ADD THIS LINE HERE
+
 
     ],
     'license': 'LGPL-3',
