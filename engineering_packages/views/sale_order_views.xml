@@ -1,15 +1,17 @@
 <odoo>
+    <!-- TEMPORARILY COMMENTED OUT TO FIX ERROR -->
+    <!-- 
     <record id="view_order_form_inherit_engineering_package" model="ir.ui.view">
         <field name="name">sale.order.form.inherit.engineering.package</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <!-- Add the Package selection field right after the customer -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="engineering_package_id" 
+               <field name="engineering_package_id" 
                        options="{'no_create': True, 'no_open': True}"
                        placeholder="اختر باقة هندسية..."/>
             </xpath>
         </field>
     </record>
+    -->
 </odoo>
