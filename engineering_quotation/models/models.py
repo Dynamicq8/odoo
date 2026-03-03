@@ -3,7 +3,7 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import urllib.parse
 
-# Helper function to get the comprehensive list of areas
+# Helper function to get the list of areas
 def _get_area_selection(self):
     selection_list = []
 
@@ -103,7 +103,8 @@ def _get_area_selection(self):
         ('جنوب الصباحية', 'جنوب الصباحية'), ('برقان', 'برقان'),
         ('الوفره السكنيه', 'الوفره السكنيه'),
         ('الهيئة العامة للزراعة والثورة السمكيه – مزارع', 'الهيئة العامة للزراعة والثورة السمكيه – مزارع'),
-        ('النويصيب', 'النويصيب'), ('المقوع', 'المقوع'), ('العبدليه', 'العبدليه'),
+        ('النويصيب', 'النويصيب'), ('المقوع', 'المقوع'), ('الفحيحيل', 'الفحيحيل'),
+        ('العبدليه', 'العبدليه'),
         ('الصناعية الصناعية الخلط الجاهز', 'الصناعية الصناعية الخلط الجاهز'),
         ('الشعيبة الصناعية الشرقيه', 'الشعيبة الصناعية الشرقيه'),
         ('الشعيبة الصناعية الغربيه', 'الشعيبة الصناعية الغربيه'),
@@ -137,7 +138,7 @@ def _get_area_selection(self):
         ('المطلاع وجال الاطراف', 'المطلاع وجال الاطراف'),
         ('النعايم الصناعية', 'النعايم الصناعية'),
         ('النهضة – شرق الصليبخات', 'النهضة – شرق الصليبخات'),
-        ('امغره الصناعية', 'امغره الصناعية'),
+        ('امغره الصناعية', 'امغره الصناعية'), ('تيماء', 'تيماء'),
         ('جال الزور', 'جال الزور'), ('جزيرة ام المرادم', 'جزيرة ام المرادم'),
         ('جزيره ام النمل', 'جزيره ام النمل'), ('جزيرة بوبيان', 'جزيرة بوبيان'),
         ('جزيرة قارووه', 'جزيرة قارووه'), ('جزيرة كبر', 'جزيرة كبر'),
@@ -170,12 +171,12 @@ class EngineeringQuotationStage(models.Model):
     _description = 'Engineering Quotation Stage'
     _order = 'sequence, id'
 
-    name = fields.Char(string='اسم المرحلة (Stage Name)', required=True, translate=True)
+    name = fields.Char(string='اسم المرحلة', required=True, translate=True)
     sequence = fields.Integer(default=10)
-    next_stage_id = fields.Many2one('engineering.quotation.stage', string="المرحلة التالية (Next Stage)")
-    button_name = fields.Char(string="نص الزر (Button Label)", help="Text for the button to move to Next Stage.")
-    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟ (Is Approved Stage?)", help="Moving to this stage triggers Project Creation")
-    is_rejected_stage = fields.Boolean(string="مرحلة الرفض؟ (Is Rejected Stage?)")
+    next_stage_id = fields.Many2one('engineering.quotation.stage', string="المرحلة التالية")
+    button_name = fields.Char(string="نص الزر")
+    is_approved_stage = fields.Boolean(string="مرحلة الموافقة؟")
+    is_rejected_stage = fields.Boolean(string="مرحلة الرفض؟")
     fold = fields.Boolean(string='Folded in Kanban', default=False)
 
 
@@ -216,7 +217,7 @@ class SaleOrder(models.Model):
     next_stage_button_name = fields.Char(compute='_compute_next_stage_button_name')
     show_next_stage_button = fields.Boolean(compute='_compute_next_stage_button_name')
 
-    required_documents = fields.Html(string="المستندات المطلوبة (Required Documents)", compute='_compute_required_documents', store=True)
+    required_documents = fields.Html(string="المستندات المطلوبة", compute='_compute_required_documents', store=True)
 
     @api.depends('service_type', 'building_type')
     def _compute_required_documents(self):
@@ -224,11 +225,11 @@ class SaleOrder(models.Model):
             docs = "<ul>"
             docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
             if order.service_type == 'new_construction':
-                docs += "<li>وثيقة الملكية (Title Deed)</li><li>كتاب التخصيص (Allocation Letter)</li><li>مخطط المساحة (Survey Plan)</li>"
+                docs += "<li>وثيقة الملكية</li><li>كتاب التخصيص</li><li>مخطط المساحة</li>"
             elif order.service_type in ['modification', 'addition', 'addition_modification']:
-                docs += "<li>رخصة البناء الأصلية (Original Building Permit)</li><li>المخططات المعمارية والإنشائية المرخصة (Original Plans)</li><li>وثيقة البيت (House Document)</li>"
+                docs += "<li>رخصة البناء الأصلية</li><li>المخططات المرخصة</li><li>وثيقة البيت</li>"
             elif order.service_type == 'demolition':
-                docs += "<li>كتاب براءة ذمة من الكهرباء والماء (Clearance Certificate)</li><li>رخصة البناء القديمة (Old Permit)</li>"
+                docs += "<li>كتاب براءة ذمة من الكهرباء والماء</li><li>رخصة البناء القديمة</li>"
             docs += "</ul>"
             order.required_documents = docs
 
@@ -238,9 +239,6 @@ class SaleOrder(models.Model):
                 approved_stage = self.env['engineering.quotation.stage'].search([('is_approved_stage', '=', True)], limit=1)
                 if approved_stage and order.quotation_stage_id != approved_stage:
                     order.quotation_stage_id = approved_stage.id
-            elif not order.quotation_stage_id.is_approved_stage:
-                # Allowing manual confirmation if explicitly allowed by process, else raise error
-                pass
         return super(SaleOrder, self).action_confirm()
 
     def action_move_to_next_stage(self):
@@ -288,7 +286,6 @@ class SaleOrder(models.Model):
         }
         project = self.env['project.project'].create(project_vals)
         
-        # Create standard engineering project stages
         stages = ['التصميم المبدئي', 'التعاقد والوثائق', 'الموافقات', 'التصميمات التفصيلية', 'الإشراف', 'إنهاء المشروع']
         for index, stage_name in enumerate(stages):
             self.env['project.task.type'].create({
@@ -328,6 +325,20 @@ class SaleOrder(models.Model):
         }
         invoice = self.env['account.move'].create(invoice_vals)
         return {'name': _('Open Invoice'), 'view_mode': 'form', 'res_model': 'account.move', 'res_id': invoice.id, 'type': 'ir.actions.act_window'}
+
+    def action_apply_opening_deduction(self):
+        self.ensure_one()
+        product_fee = self.env['product.product'].search([('name', '=', 'رسوم فتح ملف')], limit=1)
+        if not product_fee: raise UserError(_("Product 'رسوم فتح ملف' not found."))
+        self.env['sale.order.line'].create({
+            'order_id': self.id,
+            'product_id': product_fee.id,
+            'name': 'خصم رسوم فتح ملف',
+            'product_uom_qty': 1,
+            'price_unit': -50.0,
+            'tax_id': False,
+        })
+        return True
 
 
 class ProjectProject(models.Model):
