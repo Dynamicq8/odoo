@@ -28,10 +28,14 @@
         'views/product_views.xml',
         'views/sale_order_views.xml',
         'views/sale_portal_templates.xml',     # <-- ADDED THIS
-                'views/sale_report_templates.xml',   # <--- ADD THIS LINE HERE
-
+        'views/custom_sale_report.xml', # <-- RENAMED/NEW FILE
 
     ],
+       'assets': {
+        'web.report_assets_common': [
+            'engineering_packages/static/src/css/report.css',
+        ],
+    },
     'license': 'LGPL-3',
     'installable': True,
     'application': True,
