@@ -35,6 +35,8 @@
             
             <!-- Add Buttons to the Task Header -->
             <xpath expr="//header" position="inside">
+                <button name="action_move_to_next_stage" 
+                        string="المرحلة التالية (Next Stage)" type="object" class="oe_highlight"/>
                 <button name="%(engineering_project.action_report_initial_design_form)d" 
                         string="طباعة نموذج المشروع (Print PDF)" type="action" class="btn-primary"/>
                 <button name="action_send_task_form_whatsapp" 
