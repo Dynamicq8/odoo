@@ -1,9 +1,17 @@
 <odoo>
-    <record id="edit_project_form_engineering" model="ir.ui.view">
-        <field name="name">project.project.form.engineering</field>
+    <record id="edit_project_form_engineering_extended" model="ir.ui.view">
+        <field name="name">project.project.form.engineering.extended</field>
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.edit_project"/>
         <field name="arch" type="xml">
+            
+            <!-- Add Buttons to the Header -->
+            <xpath expr="//header" position="inside">
+                <button name="%(action_report_initial_design_form)d" string="طباعة نموذج المشروع (Print PDF)" type="action" class="btn-primary"/>
+                <button name="action_send_project_form_whatsapp" string="إرسال واتساب (WhatsApp)" type="object" class="btn-success" icon="fa-whatsapp"/>
+            </xpath>
+
+            <!-- Add existing fields after partner_id -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_order_id" readonly="1"/>
                 <group string="بيانات الموقع (Site Details)">
@@ -18,6 +26,20 @@
                     <field name="street_no"/>
                 </group>
             </xpath>
+
+            <!-- Create a new Tab for the Form Details -->
+            <xpath expr="//notebook" position="inside">
+                <page string="نموذج مكونات المشروع" name="project_details_form">
+                    <group>
+                        <field name="floor_basement" placeholder="اكتب تفاصيل السرداب هنا..."/>
+                        <field name="floor_ground" placeholder="اكتب تفاصيل الدور الأرضي هنا..."/>
+                        <field name="floor_first" placeholder="اكتب تفاصيل الدور الأول هنا..."/>
+                        <field name="floor_second" placeholder="اكتب تفاصيل الدور الثاني هنا..."/>
+                        <field name="floor_roof" placeholder="اكتب تفاصيل السطح هنا..."/>
+                    </group>
+                </page>
+            </xpath>
+
         </field>
     </record>
 </odoo>
