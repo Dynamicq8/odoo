@@ -12,6 +12,8 @@
     'data': [
         'views/project_project_views.xml',
         'data/project_task_type_data.xml',
+                'reports/initial_design_report.xml', # <--- ADD THIS
+
     ],
     'license': 'LGPL-3',
     'installable': True,
