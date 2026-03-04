@@ -3,13 +3,9 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import urllib.parse
 
-# ==========================================================
-#  PROJECT MODEL - We REMOVED the duplicate floor fields
-# ==========================================================
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    # --- Existing Fields (These are correct) ---
     sale_order_id = fields.Many2one('sale.order', string='Source Quotation', readonly=True)
     
     building_type = fields.Selection([
@@ -33,23 +29,24 @@ class ProjectProject(models.Model):
     street_no = fields.Char(string="الشارع")
     area = fields.Char(string="المساحة (Area)")
 
-    # --- THE DUPLICATE floor_... FIELDS AND action_send_project_form_whatsapp HAVE BEEN REMOVED FROM HERE ---
+    # --- WE KEEP THESE HERE SILENTLY SO ODOO DOES NOT CRASH ---
+    floor_basement = fields.Text(string="أولاً السرداب")
+    floor_ground = fields.Text(string="ثانياً الدور الأرضي")
+    floor_first = fields.Text(string="الدور الأول")
+    floor_second = fields.Text(string="الدور الثاني")
+    floor_roof = fields.Text(string="الدور السطح")
 
 
-# ==========================================================
-#  TASK MODEL - This is where the form fields should live
-# ==========================================================
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
-    # --- THE FIELDS NOW ONLY EXIST HERE, ON THE TASK ---
+    # --- THESE ARE THE REAL FIELDS YOU WILL FILL OUT IN THE TASK ---
     floor_basement = fields.Text(string="أولاً السرداب")
     floor_ground = fields.Text(string="ثانياً الدور الأرضي")
     floor_first = fields.Text(string="الدور الأول")
     floor_second = fields.Text(string="الدور الثاني")
     floor_roof = fields.Text(string="الدور السطح")
     
-    # Button to go back to the main project
     def action_view_parent_project(self):
         self.ensure_one()
         if not self.project_id:
@@ -62,10 +59,8 @@ class ProjectTask(models.Model):
             'target': 'current',
         }
 
-    # --- WHATSAPP BUTTON LOGIC FOR THE TASK ---
     def action_send_task_form_whatsapp(self):
         self.ensure_one()
-        # Get the customer's phone from the parent project
         phone = self.project_id.partner_id.mobile or self.project_id.partner_id.phone
         if not phone:
             raise UserError("رقم الهاتف مفقود للعميل في المشروع")
