@@ -1,14 +1,32 @@
 <odoo>
     <!-- ============================================= -->
-    <!--  1. ADD SITE DETAILS TO THE MAIN PROJECT FORM  -->
+    <!--  1. MAIN PROJECT FORM (TEAM & BUTTONS)         -->
     <!-- ============================================= -->
     <record id="edit_project_form_engineering" model="ir.ui.view">
         <field name="name">project.project.form.engineering</field>
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.edit_project"/>
         <field name="arch" type="xml">
+            
+            <xpath expr="//header" position="inside">
+                <button name="action_start_workflow" 
+                        string="بدء سير العمل (Start Workflow)" 
+                        type="object" 
+                        class="btn-primary" 
+                        invisible="workflow_started == True"/>
+            </xpath>
+
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_order_id" readonly="1"/>
+                <field name="workflow_started" invisible="1"/>
+                
+                <group string="فريق العمل (Project Team)">
+                    <field name="architect_id"/>
+                    <field name="secretary_id"/>
+                    <field name="structural_id"/>
+                    <field name="draftsman_id"/>
+                </group>
+
                 <group string="بيانات الموقع (Site Details)">
                     <field name="building_type"/>
                     <field name="service_type"/>
@@ -25,7 +43,7 @@
     </record>
 
     <!-- ====================================================== -->
-    <!--  2. ADD THE NEW TAB AND BUTTONS TO THE **TASK** FORM  -->
+    <!--  2. TASK FORM (BUTTONS AND TABS)                       -->
     <!-- ====================================================== -->
     <record id="view_task_form2_engineering_extended" model="ir.ui.view">
         <field name="name">project.task.form.engineering.extended</field>
@@ -33,22 +51,23 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             
-            <!-- Add Buttons to the Task Header -->
             <xpath expr="//header" position="inside">
                 <button name="action_move_to_next_stage" 
                         string="المرحلة التالية (Next Stage)" type="object" class="oe_highlight"/>
                 <button name="%(engineering_project.action_report_initial_design_form)d" 
-                        string="طباعة نموذج المشروع (Print PDF)" type="action" class="btn-primary"/>
+                        string="طباعة نموذج المشروع (Print PDF)" type="action" class="btn-secondary"/>
                 <button name="action_send_task_form_whatsapp" 
                         string="إرسال واتساب (WhatsApp)" type="object" class="btn-success" icon="fa-whatsapp"/>
                 <button name="action_view_parent_project"
                         string="الذهاب للمشروع (Go to Project)" type="object" icon="fa-briefcase"/>
             </xpath>
 
-            <!-- Create a new Tab for the Form Details inside the Task -->
             <xpath expr="//notebook" position="inside">
                 <page string="نموذج مكونات المشروع" name="project_details_form">
                     <group>
+                        <!-- Hidden field just to help debugging if needed -->
+                        <field name="workflow_step" invisible="1"/>
+                        
                         <field name="floor_basement" placeholder="اكتب تفاصيل السرداب هنا..."/>
                         <field name="floor_ground" placeholder="اكتب تفاصيل الدور الأرضي هنا..."/>
                         <field name="floor_first" placeholder="اكتب تفاصيل الدور الأول هنا..."/>
