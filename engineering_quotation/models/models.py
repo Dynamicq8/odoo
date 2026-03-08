@@ -286,7 +286,16 @@ class SaleOrder(models.Model):
         }
         project = self.env['project.project'].create(project_vals)
         
-        stages = ['التصميم المبدئي', 'التعاقد والوثائق', 'الموافقات', 'التصميمات التفصيلية', 'الإشراف', 'إنهاء المشروع']
+         # --- FIXED STAGES TO MATCH YOUR IMAGE EXACTLY ---
+        stages = [
+            'التصميم المبدئي', 
+            'التعاقد والوثائق', 
+            'المخطط الانشائي', 
+            'الموافقات', 
+            'التصميمات التفصيلية', 
+            'الإشراف', 
+            'إنهاء المشروع'
+        ]
         for index, stage_name in enumerate(stages):
             self.env['project.task.type'].create({
                 'name': stage_name, 
