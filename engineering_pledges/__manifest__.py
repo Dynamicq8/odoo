@@ -3,7 +3,7 @@
     'summary': "Manage Municipality Pledges (تعهدات البلدية)",
     'version': '1.0',
     'category': 'Services/Project',
-    'depends': ['base', 'project'],
+'depends': ['base', 'project', 'engineering_project'], # Added engineering_project
     'data': [
         'security/ir.model.access.csv',
         'views/pledge_template_views.xml',
