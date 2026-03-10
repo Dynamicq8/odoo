@@ -5,21 +5,26 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             
-            <!-- THE FIX: We must add the field to the view (even if hidden) -->
             <xpath expr="//field[@name='project_id']" position="after">
                 <field name="stage_sequence" invisible="1"/>
             </xpath>
             
             <xpath expr="//notebook" position="inside">
-                <!-- Now this invisible rule will work perfectly -->
-                <page string="تعهدات البلدية (Pledges)" 
-                      name="municipality_pledges" 
-                      invisible="stage_sequence != 2">
+                <page string="تعهدات البلدية (Pledges)" name="municipality_pledges" invisible="stage_sequence != 2">
                     
-                    <button name="action_load_required_pledges" 
-                            string="تحميل التعهدات المطلوبة (Load Required Pledges)" 
-                            type="object" 
-                            class="btn-secondary mb-3" icon="fa-download"/>
+                    <div class="mb-3">
+                        <button name="action_load_required_pledges" 
+                                string="تحميل التعهدات (Load Pledges)" 
+                                type="object" 
+                                class="btn-secondary" icon="fa-download"/>
+                                
+                        <!-- NEW BUTTON TO GENERATE PDF -->
+                        <button name="action_generate_pledges_pdf" 
+                                string="طباعة التعهدات (Print Pledges PDF)" 
+                                type="object" 
+                                class="btn-primary ms-2" icon="fa-print"
+                                invisible="not pledge_ids"/>
+                    </div>
                     
                     <field name="pledge_ids">
                         <tree editable="bottom" decoration-success="is_completed==True" decoration-danger="is_completed==False">
