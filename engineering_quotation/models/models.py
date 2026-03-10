@@ -45,7 +45,7 @@ def _get_governorate_areas():
             ('عبد الله المبارك', 'عبد الله المبارك'),
             ('مدينه صباح السالم الجامعية', 'مدينه صباح السالم الجامعية'),
             ('منطقة المعارض جنوب خيطان', 'منطقة المعارض جنوب خيطان'),
-            ('الأندلس', 'الأندلس'), ('إشبيلية', 'إشبيلي'),
+            ('الأندلس', 'الأندلس'), ('إشبيلية', 'إشبيلية'), # Corrected 'إشبيلي' to 'إشبيلية'
             ('جليب الشيوخ', 'جليب الشيوخ'), ('الفردوس', 'الفردوس'),
             ('صباح الناصر', 'صباح الناصر'), ('الرابية', 'الرابية'),
             ('العارضية', 'العارضية'),
@@ -137,9 +137,15 @@ def _get_governorate_areas():
         ],
     }
 
-# --- ADDED 'self' PARAMETER HERE ---
-def _get_all_regions(self):
-    """Helper function to load ALL regions at once for the Selection field"""
+# This helper is now dynamic based on the selected governorate
+def _get_regions_selection(self):
+    current_governorate = self.governorate
+    if current_governorate:
+        return _get_governorate_areas().get(current_governorate, [])
+    return []
+
+# This helper gets all regions for the project.project model, which might not have a governorate set initially
+def _get_all_regions_for_project(self):
     all_regions = []
     seen_regions = set()
     for areas in _get_governorate_areas().values():
@@ -193,8 +199,9 @@ class SaleOrder(models.Model):
         string="المحافظة"
     )
     
+    # The 'region' field now uses a dynamic selection based on 'governorate'
     region = fields.Selection(
-        selection=_get_all_regions, 
+        selection=_get_regions_selection, 
         string="المنطقة"
     )
 
@@ -202,6 +209,10 @@ class SaleOrder(models.Model):
     def _onchange_governorate(self):
         """Clears Region when Governorate changes to force a new selection"""
         self.region = False
+        # Return a domain to filter the region selection based on the chosen governorate
+        if self.governorate:
+            return {'domain': {'region': [(area[0], area[1]) for area in _get_governorate_areas().get(self.governorate, [])]}}
+        return {'domain': {'region': []}}
         
     @api.constrains('governorate', 'region')
     def _check_valid_region(self):
@@ -370,14 +381,21 @@ class ProjectProject(models.Model):
         string="المحافظة"
     )
 
+    # For project.project, we might need all regions if a governorate isn't explicitly set during creation,
+    # or if we're viewing an existing project where the governorate might be missing.
+    # However, if 'governorate' is always set via '_create_engineering_project',
+    # then _get_regions_selection can also be used here. For safety, I've kept a broader getter.
     region = fields.Selection(
-        selection=_get_all_regions, 
+        selection=_get_all_regions_for_project, # Changed to a general getter for project.project
         string="المنطقة"
     )
     
     @api.onchange('governorate')
     def _onchange_governorate(self):
         self.region = False
+        if self.governorate:
+            return {'domain': {'region': [(area[0], area[1]) for area in _get_governorate_areas().get(self.governorate, [])]}}
+        return {'domain': {'region': []}}
         
     @api.constrains('governorate', 'region')
     def _check_valid_region(self):
