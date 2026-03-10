@@ -7,6 +7,8 @@
     'data': [
         'security/ir.model.access.csv',
         'views/pledge_template_views.xml',
+                'views/project_views.xml', # We will create this file in Step 4
+
     ],
     'installable': True,
     'application': False,
