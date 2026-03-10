@@ -18,12 +18,7 @@
                     
                     <!-- Governorate field -->
                     <field name="governorate" placeholder="اختر المحافظة" />
-                    
-                    <!-- Region field (Hidden until Governorate is selected) -->
-                    <!-- NOTE: If you are using Odoo 17+, replace attrs="..." with invisible="not governorate" required="governorate" -->
-                    <field name="region" 
-                           attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}"
-                           placeholder="اختر المنطقة" />
+<field name="region" invisible="not governorate" required="governorate" placeholder="اختر المنطقة" />
                     
                     <field name="area"/>
                     <field name="block_no"/>
