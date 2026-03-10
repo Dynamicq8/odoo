@@ -1,39 +1,30 @@
 <odoo>
-    <!-- Define the Action -->
+
     <record id="action_report_unified_pledges" model="ir.actions.report">
-        <field name="name">نماذج تعهدات البلدية (Municipality Pledges)</field>
+        <field name="name">Municipality Pledges</field>
         <field name="model">project.task</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">engineering_pledges.report_unified_pledges_template</field>
         <field name="report_file">engineering_pledges.report_unified_pledges_template</field>
         <field name="print_report_name">'Pledges - %s' % (object.project_id.name)</field>
-        <field name="binding_model_id" ref="project.model_project_task"/>
-        <field name="binding_type">report</field>
     </record>
 
-    <!-- Define the PDF Template -->
     <template id="report_unified_pledges_template">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <t t-call="web.basic_layout">
-                    <!-- We loop through every pledge attached to this task -->
-                    <t t-foreach="doc.pledge_ids" t-as="pledge">
-                        
-                        <!-- This forces a page break so every pledge starts on a new page -->
-                        <div class="page" style="page-break-after: always; direction: rtl; text-align: right; font-family: Arial, sans-serif;">
-                            
-                            <!-- 
-                                THE FIX IS HERE: 
-                                t-raw tells the PDF engine to render the tags as actual HTML 
-                                (bold, tables, layout) instead of just raw text.
-                            -->
+
+                <t t-foreach="doc.pledge_ids" t-as="pledge">
+                    <t t-call="web.basic_layout">
+
+                        <div class="page" style="direction: rtl; text-align: right; font-family: Arial, sans-serif;">
                             <div t-raw="pledge.generated_html"/>
-                            
                         </div>
 
                     </t>
                 </t>
+
             </t>
         </t>
     </template>
+
 </odoo>
