@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 import urllib.parse
 
 # Helper function to get the list of areas organized by governorate
@@ -137,6 +137,19 @@ def _get_governorate_areas():
         ],
     }
 
+# --- NEW HELPER FUNCTION TO GET ALL REGIONS ---
+def _get_all_regions():
+    """Returns a single flat list of all regions from all governorates to prevent JS crash."""
+    all_regions = []
+    seen_regions = set()
+    for areas in _get_governorate_areas().values():
+        for area_val, area_label in areas:
+            if area_val not in seen_regions:
+                all_regions.append((area_val, area_label))
+                seen_regions.add(area_val)
+    return sorted(all_regions, key=lambda x: x[1])
+
+
 class EngineeringQuotationStage(models.Model):
     _name = 'engineering.quotation.stage'
     _description = 'Engineering Quotation Stage'
@@ -175,27 +188,40 @@ class SaleOrder(models.Model):
     street_no = fields.Char(string="الشارع")
     area = fields.Char(string="مساحة الارض")
     
-    # New Governorate field
+    # Governorate field (no changes needed here)
     governorate = fields.Selection(
         selection=[(gov, gov) for gov in _get_governorate_areas().keys()],
-        string="المحافظة (Governorate)"
+        string="المحافظة"
     )
     
-    # Region field now depends on governorate
+    # --- FIXED REGION FIELD ---
+    # Now uses the new helper function to get ALL possible regions
     region = fields.Selection(
-        selection='_compute_region_selection', 
-        string="المنطقة (Region)",
-        store=True, # You might want to store this for reporting/filtering
-        readonly=False # Ensure it's editable
+        selection=_get_all_regions, 
+        string="المنطقة"
     )
 
-    @api.depends('governorate')
-    def _compute_region_selection(self):
-        for rec in self:
-            if rec.governorate:
-                rec.region = False # Clear existing region if governorate changes
-                return _get_governorate_areas().get(rec.governorate, [])
-            return []
+    # --- NEW ONCHANGE METHOD ---
+    @api.onchange('governorate')
+    def _onchange_governorate(self):
+        """When governorate changes, clear the region field."""
+        # This will force the user to re-select a region.
+        # The list of available regions will be filtered in the XML view if needed,
+        # but this Python change prevents saving invalid data.
+        self.region = False
+        if self.governorate:
+            valid_regions = [area[0] for area in _get_governorate_areas().get(self.governorate, [])]
+            return {'domain': {'region': [('id', 'in', valid_regions)]}}
+        return {'domain': {'region': []}}
+        
+    # --- NEW CONSTRAINT FOR DATA INTEGRITY ---
+    @api.constrains('governorate', 'region')
+    def _check_valid_region(self):
+        for order in self:
+            if order.governorate and order.region:
+                valid_regions = [area[0] for area in _get_governorate_areas().get(order.governorate, [])]
+                if order.region not in valid_regions:
+                    raise ValidationError(_("The selected region '%s' is not valid for the governorate '%s'.") % (order.region, order.governorate))
 
     project_id = fields.Many2one('project.project', string='Project', copy=False)
     
@@ -276,11 +302,10 @@ class SaleOrder(models.Model):
             'street_no': self.street_no,
             'area': self.area,
             'region': self.region,
-            'governorate': self.governorate, # Pass the governorate to the project
+            'governorate': self.governorate,
         }
         project = self.env['project.project'].create(project_vals)
         
-         # --- FIXED STAGES TO MATCH YOUR IMAGE EXACTLY ---
         stages = [
             'التصميم المبدئي', 
             'التعاقد والوثائق', 
@@ -351,26 +376,35 @@ class ProjectProject(models.Model):
     building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
     service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
     
-    # Add governorate field to project model
     governorate = fields.Selection(
         selection=[(gov, gov) for gov in _get_governorate_areas().keys()],
-        string="المحافظة (Governorate)"
+        string="المحافظة"
     )
-    # Region field for project should also depend on the governorate
+
+    # --- FIXED REGION FIELD ---
     region = fields.Selection(
-        selection='_compute_region_selection', 
-        string="المنطقة (Region)",
-        store=True,
-        readonly=False
+        selection=_get_all_regions, 
+        string="المنطقة"
     )
     
-    @api.depends('governorate')
-    def _compute_region_selection(self):
-        for rec in self:
-            if rec.governorate:
-                rec.region = False # Clear existing region if governorate changes
-                return _get_governorate_areas().get(rec.governorate, [])
-            return []
+    # --- NEW ONCHANGE METHOD ---
+    @api.onchange('governorate')
+    def _onchange_governorate(self):
+        """When governorate changes, clear the region field."""
+        self.region = False
+        if self.governorate:
+            valid_regions = [area[0] for area in _get_governorate_areas().get(self.governorate, [])]
+            return {'domain': {'region': [('id', 'in', valid_regions)]}}
+        return {'domain': {'region': []}}
+        
+    # --- NEW CONSTRAINT FOR DATA INTEGRITY ---
+    @api.constrains('governorate', 'region')
+    def _check_valid_region(self):
+        for project in self:
+            if project.governorate and project.region:
+                valid_regions = [area[0] for area in _get_governorate_areas().get(project.governorate, [])]
+                if project.region not in valid_regions:
+                    raise ValidationError(_("The selected region '%s' is not valid for the governorate '%s'.") % (project.region, project.governorate))
 
     plot_no = fields.Char(string="رقم القسيمة")
     block_no = fields.Char(string="القطعة")
