@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="sale_order_view_form_engineering" model="ir.ui.view">
         <field name="name">sale.order.form.engineering</field>
@@ -5,23 +6,22 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
+                
                 <!-- Project Details Section -->
                 <group string="بيانات المشروع (Project Details)">
-                    <!-- Each field gets its own sub-group or direct field placement to force vertical -->
                     <field name="building_type"/>
                     <field name="service_type"/>
                 </group>
 
-                <!-- Location Details Section - Focus on forcing vertical stacking here -->
+                <!-- Location Details Section -->
                 <group string="تفاصيل الموقع (Location Details)">
-                    <!-- New Governorate field -->
-                    <field name="governorate" 
-                           options="{'no_open': True, 'no_create': True}" 
-                           placeholder="اختر المحافظة" />
                     
-                    <!-- Region field, now dependent on governorate -->
+                    <!-- Governorate field -->
+                    <field name="governorate" placeholder="اختر المحافظة" />
+                    
+                    <!-- Region field (Hidden until Governorate is selected) -->
+                    <!-- NOTE: If you are using Odoo 17+, replace attrs="..." with invisible="not governorate" required="governorate" -->
                     <field name="region" 
-                           options="{'no_open': True, 'no_create': True}" 
                            attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}"
                            placeholder="اختر المنطقة" />
                     
@@ -29,6 +29,7 @@
                     <field name="block_no"/>
                     <field name="street_no"/>
                     <field name="plot_no"/>
+                    
                 </group>
 
             </xpath>
