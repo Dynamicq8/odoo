@@ -1,160 +1,10 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError
 import urllib.parse
 
-# Helper function to get the list of areas organized by governorate
-def _get_governorate_areas():
-    return {
-        'محافظة العاصمة': [
-            ('جابر الاحمد', 'جابر الاحمد'), ('القبلة', 'القبلة'), ('الشرق', 'الشرق'),
-            ('المرقاب', 'المرقاب'), ('الصالحية', 'الصالحية'), ('دسمان', 'دسمان'),
-            ('الدعية', 'الدعية'), ('الدسمة', 'الدسمة'), ('كيفان', 'كيفان'),
-            ('الخالدية', 'الخالدية'), ('الشامية', 'الشامية'), ('الروضة', 'الروضة'),
-            ('العديلية', 'العديلية'), ('الفيحاء', 'الفيحاء'), ('القادسية', 'القادسية'),
-            ('قرطبة', 'قرطبة'), ('السرة', 'السرة'), ('اليرموك', 'اليرموك'),
-            ('النزهة', 'النزهة'), ('الشويخ الصناعية 1', 'الشويخ الصناعية 1'),
-            ('الشويخ الصناعية 2', 'الشويخ الصناعية 2'), ('الشويخ الصناعية 3', 'الشويخ الصناعية 3'),
-            ('الشويخ الادارية', 'الشويخ الادارية'), ('الشويخ السكنى', 'الشويخ السكنى'),
-            ('الشويخ التعليمية', 'الشويخ التعليمية'), ('الشويخ الصحيه', 'الشويخ الصحيه'),
-            ('الواجهه البحرية', 'الواجهه البحرية'), ('غرناطة', 'غرناطة'),
-            ('الصليبيخات', 'الصليبيخات'), ('المنصورية', 'المنصورية'),
-            ('الدوحة السكنيه', 'الدوحة السكنيه'), ('الرى', 'الرى'),
-            ('ميناء الدوحة', 'ميناء الدوحة'), ('جزيره عوهه', 'جزيره عوهه'),
-            ('جزيره فيلكه', 'جزيره فيلكه'), ('جزيره مسكان', 'جزيره مسكان'),
-            ('حدائق السور – الحزام الاخضر', 'حدائق السسور – الحزام الاخضر'),
-            ('بنيد القار', 'بنيد القار'), ('ميناء الشويخ', 'ميناء الشويخ'),
-            ('معسكرات المباركيه – جيوان', 'معسكرات المباركيه – جيوان'),
-            ('شاليهات الدوحة', 'شاليهات الدوحة'), ('السره', 'السره'),
-        ],
-        'محافظة حولي': [
-            ('حولي', 'حولي'), ('السالمية', 'السالمية'), ('الرميثية', 'الرميثية'),
-            ('الجابرية', 'الجابرية'), ('بيان', 'بيان'), ('مشرف', 'مشرف'),
-            ('سلوى', 'سلوى'), ('ميدان حولي', 'ميدان حولي'), ('الزهراء', 'الزهراء'),
-            ('الصديق', 'الصديق'), ('حطين', 'حطين'), ('السلام', 'السلام'),
-            ('الشهداء', 'الشهداء'), ('انجفة', 'انجفة'), ('الشعب', 'الشعب'),
-            ('مبارك العبد الله', 'مبارك العبد الله'), ('الواجهه البحريه', 'الواجهه البحريه'),
-            ('الضاحيه الدبلوماسيه', 'الضاحيه الدبلوماسيه'),
-            ('المباركيه قطعة 15 بيان', 'المباركيه قطعة 15 بيان'), ('البدع', 'البدع'),
-        ],
-        'محافظة الفروانية': [
-            ('الفروانية', 'الفروانية'), ('خيطان', 'خيطان'), ('العمرية', 'العمرية'),
-            ('الرحاب', 'الرحاب'), ('الرقعى', 'الرقعى'), ('الشدادية', 'الشدادية'),
-            ('الضجيج', 'الضجيج'), ('المطار', 'المطار'),
-            ('غرب الجليب الشداديه', 'غرب الجليب الشداديه'),
-            ('عبد الله المبارك', 'عبد الله المبارك'),
-            ('مدينه صباح السالم الجامعية', 'مدينه صباح السالم الجامعية'),
-            ('منطقة المعارض جنوب خيطان', 'منطقة المعارض جنوب خيطان'),
-            ('الأندلس', 'الأندلس'), ('إشبيلية', 'إشبيلية'), # Corrected 'إشبيلي' to 'إشبيلية'
-            ('جليب الشيوخ', 'جليب الشيوخ'), ('الفردوس', 'الفردوس'),
-            ('صباح الناصر', 'صباح الناصر'), ('الرابية', 'الرابية'),
-            ('العارضية', 'العارضية'),
-            ('العارضية استعمالات حكومية', 'العارضية استعمالات حكومية'),
-            ('العارضية مخازن', 'العارضية مخازن'), ('العارضية الحرفية', 'العارضية الحرفية'),
-            ('غرب عبد المبارك السكنى', 'غرب عبد المبارك السكنى'),
-            ('جنوب عبد الله المبارك السكنى', 'جنوب عبد الله المبارك السكنى'),
-            ('العباسية', 'العباسية'),
-        ],
-        'محافظة الأحمدي': [
-            ('الأحمدي', 'الأحمدي'), ('الفحيحيل', 'الفحيحيل'), ('المنقف', 'المنقف'),
-            ('أبو حليفة', 'أبو حليفة'), ('الصباحية', 'الصباحية'), ('الرقة', 'الرقة'),
-            ('هدية', 'هدية'), ('الفنطاس', 'الفنطاس'), ('المهبولة', 'المهبولة'),
-            ('العقيلة', 'العقيلة'), ('الظهر', 'الظهر'), ('جابر العلي', 'جابر العلي'),
-            ('صباح الأحمد السكنية', 'صباح الأحمد السكنية'), ('الوفرة', 'الوفرة'),
-            ('الخيران', 'الخيران'), ('ميناء الزور', 'ميناء الزور'),
-            ('ميناء عبد الله الصناعية', 'ميناء عبد الله الصناعية'),
-            ('ميناء عبد الله', 'ميناء عبد الله'), ('مزارع الوفره', 'مزارع الوفره'),
-            ('صباح الاحمد السكنيه', 'صباح الاحمد السكنيه'),
-            ('صباح الاحمد البحريه', 'صباح الاحمد البحريه'),
-            ('قردان والحفيرة والفوار', 'قردان والحفيرة والفوار'),
-            ('فهد الاحمد', 'فهد الاحمد'),
-            ('على صباح السالم – ام الهيمان', 'على صباح السالم – ام الهيمان'),
-            ('عريفجان', 'عريفجان'), ('ضليع الزنيف', 'ضليع الزنيف'),
-            ('شرق الاحمدى الخدميه والحرفية والتجاريه', 'شرق الاحمدى الخدميه والحرفية والتجاريه'),
-            ('شرق الاحمدى', 'شرق الاحمدى'),
-            ('شاليهات ميناء عبد الله', 'شاليهات ميناء عبد الله'),
-            ('شاليهات بنيدر', 'شاليهات بنيدر'),
-            ('شاليهات النويصيب', 'شاليهات النويصيب'),
-            ('شاليهات الضاعيه', 'شاليهات الضاعيه'), ('شاليهات الزور', 'شاليهات الزور'),
-            ('شاليهات الخيران', 'شاليهات الخيران'),
-            ('شاليهات الجليعه', 'شاليهات الجليعه'),
-            ('رجم خشمان ومصلان', 'رجم خشمان ومصلان'),
-            ('جنوب الصباحية', 'جنوب الصباحية'), ('برقان', 'برقان'),
-            ('الوفره السكنيه', 'الوفره السكنيه'),
-            ('الهيئة العامة للزراعة والثورة السمكيه – مزارع', 'الهيئة العامة للزراعة والثورة السمكيه – مزارع'),
-            ('النويصيب', 'النويصيب'), ('المقوع', 'المقوع'), ('الفحيحيل', 'الفحيحيل'),
-            ('العبدليه', 'العبدليه'),
-            ('الصناعية الصناعية الخلط الجاهز', 'الصناعية الصناعية الخلط الجاهز'),
-            ('الشعيبة الصناعية الشرقيه', 'الشعيبة الصناعية الشرقيه'),
-            ('الشعيبة الصناعية الغربيه', 'الشعيبة الصناعية الغربيه'),
-            ('الشعيبة', 'الشعيبة'), ('الشدادية الصناعية', 'الشدادية الصناعية'),
-            ('الزور وصوله', 'الزور وصوله'), ('ام حجول', 'ام حجول'),
-            ('ام قدير', 'ام قدير'), ('ابو خرجين والصبيحية', 'ابو خرجين والصبيحية'),
-        ],
-        'محافظة الجهراء': [
-            ('الجهراء', 'الجهراء'), ('القصر', 'القصر'), ('النسيم', 'النسيم'),
-            ('الواحة', 'الواحة'), ('النعيم', 'النعيم'), ('تيماء', 'تيماء'),
-            ('سعد العبدالله', 'سعد العبدالله'), ('الصليبية', 'الصليبية'),
-            ('كبد', 'كبد'), ('المطلاع', 'المطلاع'), ('أمغرة', 'أمغرة'),
-            ('البحيث', 'البحيث'), ('الجهراء الصناعية الثانية', 'الجهراء الصناعية الثانية'),
-            ('الجهراء الصناعية الحرفيه الاولى', 'الجهراء الصناعية الحرفيه الاولى'),
-            ('الرتقة والحريجه', 'الرتقة والحريجه'),
-            ('الرحية وام توينج', 'الرحية وام توينج'), ('الروضتين', 'الروضتين'),
-            ('السالمى', 'السالمى'), ('السكراب', 'السكراب'),
-            ('الشقايا – الدبدبة – المتياهه', 'الشقايا – الدبدبة – المتياهه'),
-            ('الالصابرية – العرفجية', 'الالصابرية – العرفجية'),
-            ('الصبية', 'الصبية'), ('الصليبية الزراعية', 'الصليبية الزراعية'),
-            ('الصليبيه السكنية', 'الصليبيه السكنية'),
-            ('الصليبية الصناعية 2', 'الصليبية الصناعية 2'),
-            ('الصليبيه الصناعية 1', 'الصليبيه الصناعية 1'),
-            ('الصير وام المدفاع', 'الصير وام المدفاع'), ('العبدلى', 'العبدلى'),
-            ('العبدلى وصخيبريات', 'العبدلى وصخيبريات'), ('العيون', 'العيون'),
-            ('القيروان – جنوب الدوحة', 'القيروان – جنوب الدوحة'),
-            ('المستثمر الاجنبى (منطقة العبدلى الاقتصادية )', 'المستثمر الاجنبى (منطقة العبدلى الاقتصادية )'),
-            ('المطلاع وجال الاطراف', 'المطلاع وجال الاطراف'),
-            ('النعايم الصناعية', 'النعايم الصناعية'),
-            ('النهضة – شرق الصليبخات', 'النهضة – شرق الصليبخات'),
-            ('امغره الصناعية', 'امغره الصناعية'), ('تيماء', 'تيماء'),
-            ('جال الزور', 'جال الزور'), ('جزيرة ام المرادم', 'جزيرة ام المرادم'),
-            ('جزيره ام النمل', 'جزيره ام النمل'), ('جزيرة بوبيان', 'جزيرة بوبيان'),
-            ('جزيرة قارووه', 'جزيرة قارووه'), ('جزيرة كبر', 'جزيرة كبر'),
-            ('جزيرة وربة', 'جزيرة وربة'), ('جنوب امغرة', 'جنوب امغرة'),
-            ('شرق الجهراء', 'شرق الجهراء'), ('شرق تيماء', 'شرق تيماء'),
-            ('شمال غرب الجهراء', 'شمال غرب الجهراء'),
-            ('قلمة شايع والمناقيش', 'قلمة شايع والمناقيش'),
-            ('كاظمة', 'كاظمة'), ('كبد والشق والضبعة', 'كبد والشق والضبعة'),
-            ('معسكرات الجهراء', 'معسكرات الجهراء'), ('مقبرة', 'مقبرة'),
-            ('مناطق نائية -الجهراء', 'مناطق نائية -الجهراء'),
-        ],
-        'محافظة مبارك الكبير': [
-            ('مبارك الكبير', 'مبارك الكبير'), ('العدان', 'العدان'),
-            ('القرين', 'القرين'), ('القصور', 'القصور'), ('المسيلة', 'المسيلة'),
-            ('غرب أبو فطيرة', 'غرب أبو فطيرة'), ('الفنيطيس', 'الفنيطيس'),
-            ('المسايل', 'المسايل'), ('الوسطى', 'الوسطى'),
-            ('جنوب الوسطى', 'جنوب الوسطى'), ('صباح السالم', 'صباح السالم'),
-            ('صبحان الصناعية', 'صبحان الصناعية'),
-            ('ضاحية ابو فطيرة', 'ضاحية ابو فطيرة'), ('ابو الحصانية', 'ابو الحصانية'),
-        ],
-    }
-
-# This helper is now dynamic based on the selected governorate
-def _get_regions_selection(self):
-    current_governorate = self.governorate
-    if current_governorate:
-        return _get_governorate_areas().get(current_governorate, [])
-    return []
-
-# This helper gets all regions for the project.project model, which might not have a governorate set initially
-def _get_all_regions_for_project(self):
-    all_regions = []
-    seen_regions = set()
-    for areas in _get_governorate_areas().values():
-        for area_val, area_label in areas:
-            if area_val not in seen_regions:
-                all_regions.append((area_val, area_label))
-                seen_regions.add(area_val)
-    return sorted(all_regions, key=lambda x: x[1])
-
+# IMPORTANT: All the helper functions and governorate/region fields have been REMOVED from this file.
+# They will be inherited from the 'engineering_core' module.
 
 class EngineeringQuotationStage(models.Model):
     _name = 'engineering.quotation.stage'
@@ -178,7 +28,6 @@ class EngineeringQuotationStageHistory(models.Model):
     quotation_id = fields.Many2one('sale.order', string='Quotation', ondelete='cascade')
     from_stage_id = fields.Many2one('engineering.quotation.stage', string='From Stage')
     to_stage_id = fields.Many2one('engineering.quotation.stage', string='To Stage')
-
     changed_by_id = fields.Many2one('res.users', string='Changed By', default=lambda self: self.env.user)
     change_date = fields.Datetime(string='Change Date', default=fields.Datetime.now)
 
@@ -186,43 +35,7 @@ class EngineeringQuotationStageHistory(models.Model):
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
-    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
-
-    plot_no = fields.Char(string="رقم القسيمة")
-    block_no = fields.Char(string="القطعة")
-    street_no = fields.Char(string="الشارع")
-    area = fields.Char(string="مساحة الارض")
-    
-    governorate = fields.Selection(
-        selection=[(gov, gov) for gov in _get_governorate_areas().keys()],
-        string="المحافظة"
-    )
-    
-    # The 'region' field now uses a dynamic selection based on 'governorate'
-    region = fields.Selection(
-        selection=_get_regions_selection, 
-        string="المنطقة"
-    )
-
-    @api.onchange('governorate')
-    def _onchange_governorate(self):
-        """Clears Region when Governorate changes to force a new selection"""
-        self.region = False
-        # Return a domain to filter the region selection based on the chosen governorate
-        if self.governorate:
-            return {'domain': {'region': [(area[0], area[1]) for area in _get_governorate_areas().get(self.governorate, [])]}}
-        return {'domain': {'region': []}}
-        
-    @api.constrains('governorate', 'region')
-    def _check_valid_region(self):
-        """Validates that the selected region actually belongs to the governorate"""
-        for order in self:
-            if order.governorate and order.region:
-                valid_regions = [area[0] for area in _get_governorate_areas().get(order.governorate, [])]
-                if order.region not in valid_regions:
-                    raise ValidationError(_("المنطقة المختارة '%s' لا تتبع للمحافظة '%s'.") % (order.region, order.governorate))
-
+    # This class now ONLY adds fields specific to the quotation process.
     project_id = fields.Many2one('project.project', string='Project', copy=False)
     
     quotation_stage_id = fields.Many2one(
@@ -240,6 +53,7 @@ class SaleOrder(models.Model):
 
     @api.depends('service_type', 'building_type')
     def _compute_required_documents(self):
+        # Note: 'service_type' and 'building_type' are inherited from engineering_core
         for order in self:
             docs = "<ul>"
             docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
@@ -253,6 +67,7 @@ class SaleOrder(models.Model):
             order.required_documents = docs
 
     def action_confirm(self):
+        # This action_confirm is fine as it uses the quotation_stage_id
         for order in self:
             if order.signature:
                 approved_stage = self.env['engineering.quotation.stage'].search([('is_approved_stage', '=', True)], limit=1)
@@ -295,14 +110,14 @@ class SaleOrder(models.Model):
             'name': f"{self.name} - {self.partner_id.name}",
             'partner_id': self.partner_id.id,
             'sale_order_id': self.id,
-            'building_type': self.building_type,
-            'service_type': self.service_type,
-            'plot_no': self.plot_no,
-            'block_no': self.block_no,
-            'street_no': self.street_no,
-            'area': self.area,
-            'region': self.region,
-            'governorate': self.governorate,
+            'building_type': self.building_type, # Inherited from engineering_core
+            'service_type': self.service_type,   # Inherited from engineering_core
+            'plot_no': self.plot_no,             # Inherited from engineering_core
+            'block_no': self.block_no,           # Inherited from engineering_core
+            'street_no': self.street_no,         # Inherited from engineering_core
+            'area': self.area,                   # Inherited from engineering_core
+            'region': self.region,               # Inherited from engineering_core
+            'governorate': self.governorate,     # Inherited from engineering_core
         }
         project = self.env['project.project'].create(project_vals)
         
@@ -369,57 +184,6 @@ class SaleOrder(models.Model):
         return True
 
 
-class ProjectProject(models.Model):
-    _inherit = 'project.project'
-
-    sale_order_id = fields.Many2one('sale.order', string='Quotation Source', readonly=True)
-    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
-    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
-    
-    governorate = fields.Selection(
-        selection=[(gov, gov) for gov in _get_governorate_areas().keys()],
-        string="المحافظة"
-    )
-
-    # For project.project, we might need all regions if a governorate isn't explicitly set during creation,
-    # or if we're viewing an existing project where the governorate might be missing.
-    # However, if 'governorate' is always set via '_create_engineering_project',
-    # then _get_regions_selection can also be used here. For safety, I've kept a broader getter.
-    region = fields.Selection(
-        selection=_get_all_regions_for_project, # Changed to a general getter for project.project
-        string="المنطقة"
-    )
-    
-    @api.onchange('governorate')
-    def _onchange_governorate(self):
-        self.region = False
-        if self.governorate:
-            return {'domain': {'region': [(area[0], area[1]) for area in _get_governorate_areas().get(self.governorate, [])]}}
-        return {'domain': {'region': []}}
-        
-    @api.constrains('governorate', 'region')
-    def _check_valid_region(self):
-        for project in self:
-            if project.governorate and project.region:
-                valid_regions = [area[0] for area in _get_governorate_areas().get(project.governorate, [])]
-                if project.region not in valid_regions:
-                    raise ValidationError(_("المنطقة المختارة '%s' لا تتبع للمحافظة '%s'.") % (project.region, project.governorate))
-
-    plot_no = fields.Char(string="رقم القسيمة")
-    block_no = fields.Char(string="القطعة")
-    street_no = fields.Char(string="الشارع")
-    area = fields.Char(string="مساحة الارض")
-
-
-class ProjectTask(models.Model):
-    _inherit = 'project.task'
-
-    def action_view_parent_project(self):
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'project.project',
-            'res_id': self.project_id.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
+# NOTE: ProjectProject is inherited in engineering_core, so we don't need to touch it here
+#       unless we are adding quotation-specific fields. We are not, so it's removed.
+# NOTE: ProjectTask is also inherited in engineering_core, so it is removed from here.
