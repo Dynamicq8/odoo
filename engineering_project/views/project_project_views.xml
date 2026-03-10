@@ -39,7 +39,11 @@
                     <group>
                         <field name="building_type"/>
                         <field name="service_type"/>
-                        <field name="region"/>
+                           <field name="governorate_id" options="{'no_create': True, 'no_open': True}"/>
+        <field name="region_id" 
+               domain="[('governorate_id', '=', governorate_id)]" 
+               options="{'no_create': True, 'no_open': True}"/>
+        <field name="area"/>
                         <field name="area"/>
                     </group>
                     <group>
