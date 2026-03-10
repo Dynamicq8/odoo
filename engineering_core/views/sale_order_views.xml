@@ -6,34 +6,25 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
-                
-                <!-- Project Details Section -->
-                <group string="بيانات المشروع (Project Details)">
-                    <field name="building_type"/>
-                    <field name="service_type"/>
-                </group>
-
-                <!-- Location Details Section -->
+                <!-- ... other groups ... -->
                 <group string="تفاصيل الموقع (Location Details)">
-                    
-                    <!-- Governorate field - Added options to prevent creation/editing of selection values -->
                     <field name="governorate" 
-                           placeholder="اختر المحافظة" 
                            options="{'no_create': True, 'no_edit': True}"/>
                     
-                    <!-- Region field - Updated attrs for visibility and requirement, and added options -->
+                    <!-- Odoo 17 Compliant Syntax -->
                     <field name="region" 
-                           attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}" 
-                           placeholder="اختر المنطقة" 
+                           invisible="not region_is_visible" 
+                           required="region_is_required" 
                            options="{'no_create': True, 'no_edit': True}"/>
                     
+                    <field name="region_is_visible" invisible="1"/>
+                    <field name="region_is_required" invisible="1"/>
+
                     <field name="area"/>
                     <field name="block_no"/>
                     <field name="street_no"/>
                     <field name="plot_no"/>
-                    
                 </group>
-
             </xpath>
         </field>
     </record>
