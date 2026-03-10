@@ -1,4 +1,4 @@
-no don't add any more functions only the exsist once and edit the government : # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
 # Helper function to get the list of areas
