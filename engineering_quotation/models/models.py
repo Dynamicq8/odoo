@@ -118,8 +118,9 @@ class SaleOrder(models.Model):
             'block_no': self.block_no,
             'street_no': self.street_no,
             'area': self.area,
-                'governorate_id': self.governorate_id.id, # Use the new field
-    'region_id': self.region_id.id,           # Use the new field
+                  # Update these keys to match the new fields:
+        'governorate_id': self.governorate_id.id, 
+        'region_id': self.region_id.id,
         }
         project = self.env['project.project'].create(project_vals)
         
