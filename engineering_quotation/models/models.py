@@ -137,9 +137,8 @@ def _get_governorate_areas():
         ],
     }
 
-# --- NEW HELPER FUNCTION TO GET ALL REGIONS ---
 def _get_all_regions():
-    """Returns a single flat list of all regions from all governorates to prevent JS crash."""
+    """Helper function to load ALL regions at once for the Selection field"""
     all_regions = []
     seen_regions = set()
     for areas in _get_governorate_areas().values():
@@ -188,40 +187,29 @@ class SaleOrder(models.Model):
     street_no = fields.Char(string="الشارع")
     area = fields.Char(string="مساحة الارض")
     
-    # Governorate field (no changes needed here)
     governorate = fields.Selection(
         selection=[(gov, gov) for gov in _get_governorate_areas().keys()],
         string="المحافظة"
     )
     
-    # --- FIXED REGION FIELD ---
-    # Now uses the new helper function to get ALL possible regions
     region = fields.Selection(
         selection=_get_all_regions, 
         string="المنطقة"
     )
 
-    # --- NEW ONCHANGE METHOD ---
     @api.onchange('governorate')
     def _onchange_governorate(self):
-        """When governorate changes, clear the region field."""
-        # This will force the user to re-select a region.
-        # The list of available regions will be filtered in the XML view if needed,
-        # but this Python change prevents saving invalid data.
+        """Clears Region when Governorate changes to force a new selection"""
         self.region = False
-        if self.governorate:
-            valid_regions = [area[0] for area in _get_governorate_areas().get(self.governorate, [])]
-            return {'domain': {'region': [('id', 'in', valid_regions)]}}
-        return {'domain': {'region': []}}
         
-    # --- NEW CONSTRAINT FOR DATA INTEGRITY ---
     @api.constrains('governorate', 'region')
     def _check_valid_region(self):
+        """Validates that the selected region actually belongs to the governorate"""
         for order in self:
             if order.governorate and order.region:
                 valid_regions = [area[0] for area in _get_governorate_areas().get(order.governorate, [])]
                 if order.region not in valid_regions:
-                    raise ValidationError(_("The selected region '%s' is not valid for the governorate '%s'.") % (order.region, order.governorate))
+                    raise ValidationError(_("المنطقة المختارة '%s' لا تتبع للمحافظة '%s'.") % (order.region, order.governorate))
 
     project_id = fields.Many2one('project.project', string='Project', copy=False)
     
@@ -381,30 +369,22 @@ class ProjectProject(models.Model):
         string="المحافظة"
     )
 
-    # --- FIXED REGION FIELD ---
     region = fields.Selection(
         selection=_get_all_regions, 
         string="المنطقة"
     )
     
-    # --- NEW ONCHANGE METHOD ---
     @api.onchange('governorate')
     def _onchange_governorate(self):
-        """When governorate changes, clear the region field."""
         self.region = False
-        if self.governorate:
-            valid_regions = [area[0] for area in _get_governorate_areas().get(self.governorate, [])]
-            return {'domain': {'region': [('id', 'in', valid_regions)]}}
-        return {'domain': {'region': []}}
         
-    # --- NEW CONSTRAINT FOR DATA INTEGRITY ---
     @api.constrains('governorate', 'region')
     def _check_valid_region(self):
         for project in self:
             if project.governorate and project.region:
                 valid_regions = [area[0] for area in _get_governorate_areas().get(project.governorate, [])]
                 if project.region not in valid_regions:
-                    raise ValidationError(_("The selected region '%s' is not valid for the governorate '%s'.") % (project.region, project.governorate))
+                    raise ValidationError(_("المنطقة المختارة '%s' لا تتبع للمحافظة '%s'.") % (project.region, project.governorate))
 
     plot_no = fields.Char(string="رقم القسيمة")
     block_no = fields.Char(string="القطعة")
