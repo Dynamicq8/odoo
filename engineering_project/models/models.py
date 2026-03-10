@@ -569,12 +569,54 @@ class ProjectTask(models.Model):
         ('residential_task_8', 'Residential Task 8'),
     ], string="Workflow Trigger", readonly=True)
 
-    # --- THIS WAS MISSING: Form Fields ---
-    floor_basement = fields.Text(string="أولاً السرداب")
-    floor_ground = fields.Text(string="ثانياً الدور الأرضي")
-    floor_first = fields.Text(string="الدور الأول")
-    floor_second = fields.Text(string="الدور الثاني")
-    floor_roof = fields.Text(string="الدور السطح")
+     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
+
+    def action_load_default_phases(self):
+        """ Loads the default checklist based on building type """
+        for task in self:
+            if task.phase_ids:
+                continue # Don't overwrite if they already loaded it
+
+            seq = 10
+            phases_data = [
+                ('مرحله الحفر', 'عام (General)'),
+                ('مرحله القواعد والشناجات', 'عام (General)'),
+                ('مرحله حوائط السرداب', 'السرداب (Basement)'),
+                ('مرحله صب سقف السرداب', 'السرداب (Basement)'),
+                ('مرحله اعمده الدور الارضى', 'الدور الأرضي (Ground)'),
+                ('مرحله صب سقف الدور الارضى', 'الدور الأرضي (Ground)'),
+                ('مرحله اعمده الدور الاول', 'الدور الأول (First)'),
+                ('مرحله صب سقف الدور الاول', 'الدور الأول (First)'),
+                ('مرحله اعمده الدور الثانى', 'الدور الثاني (Second)'),
+                ('مرحله صب سقف الدور الثانى', 'الدور الثاني (Second)'),
+                ('مرحله اعمده الدور السطح', 'السطح (Roof)'),
+                ('مرحله صب سقف السطح', 'السطح (Roof)'),
+            ]
+
+            phases_to_create = []
+            for name, category in phases_data:
+                phases_to_create.append((0, 0, {
+                    'name': name,
+                    'floor_category': category,
+                    'sequence': seq
+                }))
+                seq += 10
+
+            task.write({'phase_ids': phases_to_create})
+
+    def get_completed_phases_grouped(self):
+        """ Helper method for the PDF Report to group checked items by floor """
+        self.ensure_one()
+        completed_phases = self.phase_ids.filtered(lambda p: p.is_completed)
+        
+        # Group by floor_category while preserving order
+        grouped = {}
+        for phase in completed_phases:
+            cat = phase.floor_category
+            if cat not in grouped:
+                grouped[cat] = []
+            grouped[cat].append(phase)
+        return grouped
 
     def write(self, vals):
         res = super(ProjectTask, self).write(vals)
