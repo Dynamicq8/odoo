@@ -6,6 +6,8 @@
 'depends': ['base', 'project', 'engineering_project'], # Added engineering_project
     'data': [
         'security/ir.model.access.csv',
+                'reports/pledges_report.xml', # <--- ADD THIS LINE HERE
+
         'views/pledge_template_views.xml',
                 'views/project_views.xml', # We will create this file in Step 4
 
