@@ -13,12 +13,12 @@
                         <field name="service_type" widget="radio" options="{'horizontal': true}"/>
                     </group>
                     <group>
-                        <field name="governorate" placeholder="اختر المحافظة"/>
+                        <!-- The 'governorate' field has been removed as requested. -->
+                        <!-- The 'region' field now stands alone, directly providing the full list of areas with governorate separators. -->
                         
                         <!-- NEW ODOO 17 SYNTAX HERE -->
                         <field name="region" 
-                               invisible="not governorate" 
-                               required="governorate" 
+                               required="True" 
                                placeholder="اختر المنطقة"/>
                         
                         <field name="area"/>
