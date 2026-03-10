@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_partner_form_engineering" model="ir.ui.view">
         <field name="name">res.partner.form.engineering</field>
@@ -7,12 +8,21 @@
             <xpath expr="//field[@name='vat']" position="after">
                 <separator string="بيانات المشروع الهندسية (Engineering Info)"/>
                 <group>
+                    <!-- Left Column: Types -->
                     <group>
                         <field name="civil_number"/>
                         <field name="building_type"/>
                         <field name="service_type"/>
                     </group>
+                    
+                    <!-- Right Column: Location Details -->
                     <group>
+                        <!-- Added Governorate and Region fields here -->
+                        <field name="governorate" placeholder="اختر المحافظة" />
+                        <field name="region" 
+                               attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}" 
+                               placeholder="اختر المنطقة" />
+                        
                         <field name="area"/>
                         <field name="block_no"/>
                         <field name="street_no"/>
