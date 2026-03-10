@@ -16,9 +16,16 @@
                 <!-- Location Details Section -->
                 <group string="تفاصيل الموقع (Location Details)">
                     
-                    <!-- Governorate field -->
-                    <field name="governorate" placeholder="اختر المحافظة" />
-<field name="region" invisible="not governorate" required="governorate" placeholder="اختر المنطقة" />
+                    <!-- Governorate field - Added options to prevent creation/editing of selection values -->
+                    <field name="governorate" 
+                           placeholder="اختر المحافظة" 
+                           options="{'no_create': True, 'no_edit': True}"/>
+                    
+                    <!-- Region field - Updated attrs for visibility and requirement, and added options -->
+                    <field name="region" 
+                           attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}" 
+                           placeholder="اختر المنطقة" 
+                           options="{'no_create': True, 'no_edit': True}"/>
                     
                     <field name="area"/>
                     <field name="block_no"/>
