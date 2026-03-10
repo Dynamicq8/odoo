@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="crm_lead_view_form_engineering" model="ir.ui.view">
         <field name="name">crm.lead.form.engineering</field>
@@ -14,12 +15,21 @@
                 <separator string="تفاصيل العقار والخدمة"/>
                 
                 <group>
+                    <!-- Left Column: Types (Radio Buttons) -->
                     <group>
                         <!-- Added options horizontal to force radio buttons side-by-side if possible -->
                         <field name="building_type" widget="radio" options="{'horizontal': true}"/>
                         <field name="service_type" widget="radio" options="{'horizontal': true}"/>
                     </group>
+                    
+                    <!-- Right Column: Location Details -->
                     <group>
+                        <!-- Added Governorate and Region fields here -->
+                        <field name="governorate" placeholder="اختر المحافظة"/>
+                        <field name="region" 
+                               attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}" 
+                               placeholder="اختر المنطقة"/>
+                        
                         <field name="area"/>
                         <field name="block_no"/>
                         <field name="street_no"/>
