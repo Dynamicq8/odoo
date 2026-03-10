@@ -5,29 +5,20 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
-            <!-- 
-                CHANGE: Move the section to 'before' the notebook (tabs).
-                This gives it full width across the page so the Radio buttons fit.
-            -->
             <xpath expr="//notebook" position="before">
-                
-                <!-- Added a horizontal separator for clean design -->
                 <separator string="تفاصيل العقار والخدمة"/>
-                
                 <group>
-                    <!-- Left Column: Types (Radio Buttons) -->
                     <group>
-                        <!-- Added options horizontal to force radio buttons side-by-side if possible -->
                         <field name="building_type" widget="radio" options="{'horizontal': true}"/>
                         <field name="service_type" widget="radio" options="{'horizontal': true}"/>
                     </group>
-                    
-                    <!-- Right Column: Location Details -->
                     <group>
-                        <!-- Added Governorate and Region fields here -->
                         <field name="governorate" placeholder="اختر المحافظة"/>
+                        
+                        <!-- NEW ODOO 17 SYNTAX HERE -->
                         <field name="region" 
-                               attrs="{'invisible': [('governorate', '=', False)], 'required': [('governorate', '!=', False)]}" 
+                               invisible="not governorate" 
+                               required="governorate" 
                                placeholder="اختر المنطقة"/>
                         
                         <field name="area"/>
