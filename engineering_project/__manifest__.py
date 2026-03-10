@@ -8,8 +8,6 @@
         'project',
         'sale_management',
         'engineering_core',
-                'engineering_pledges', # <--- ADD THIS LINE
-
     ],
     'data': [
         'reports/initial_design_report.xml', # <--- ADD THIS
