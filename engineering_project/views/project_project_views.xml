@@ -9,19 +9,21 @@
         <field name="arch" type="xml">
             
             <xpath expr="//header" position="inside">
-                <!-- CORRECTED BUTTON -->
+                <!-- ODOO 17 SYNTAX: Use 'invisible' attribute directly -->
                 <button name="action_start_workflow" 
                         string="بدء سير العمل (Start Workflow)" 
                         type="object" 
                         class="btn-primary" 
-                        attrs="{'invisible': ['|', ('workflow_started', '=', True), ('id', '=', False)]}"
+                        invisible="workflow_started == True or id == False"
                         help="Creates the initial tasks for this project's workflow."/>
             </xpath>
 
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_order_id" readonly="1"/>
                 
-                <!-- ALL WORKFLOW FIELDS ADDED AS INVISIBLE -->
+                <!-- These fields must still be in the view, but they don't cause the JS error.
+                     The ParseError was due to the 'attrs' attribute on the button.
+                     Keeping them here is good practice for any potential future logic. -->
                 <field name="workflow_started" invisible="1"/>
                 <field name="residential_step_1_triggered" invisible="1"/>
                 <field name="residential_step_2_triggered" invisible="1"/>
