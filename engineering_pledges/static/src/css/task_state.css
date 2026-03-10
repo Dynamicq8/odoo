@@ -1,8 +1,0 @@
-/* engineering_project/static/src/css/task_state.css */
-
-/* Target the 'In Progress' state (which uses Odoo's default text-muted class) 
-   and force it to be black instead of grey inside the state widget */
-div[name="state"] .text-muted,
-div[name="state"] i.text-muted {
-    color: #000000 !important;
-}
