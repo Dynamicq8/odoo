@@ -1,1 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_kuwait_governorate,kuwait.governorate.access,model_kuwait_governorate,,1,1,1,1
+access_kuwait_region,kuwait.region.access,model_kuwait_region,,1,1,1,1
