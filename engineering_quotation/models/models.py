@@ -158,7 +158,8 @@ class EngineeringQuotationStageHistory(models.Model):
 
     quotation_id = fields.Many2one('sale.order', string='Quotation', ondelete='cascade')
     from_stage_id = fields.Many2one('engineering.quotation.stage', string='From Stage')
-    to_stage_id = fields.Many22one('engineering.quotation.stage', string='To Stage')
+    to_stage_id = fields.Many2one('engineering.quotation.stage', string='To Stage')
+
     changed_by_id = fields.Many2one('res.users', string='Changed By', default=lambda self: self.env.user)
     change_date = fields.Datetime(string='Change Date', default=fields.Datetime.now)
 
