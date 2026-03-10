@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 import datetime
 
 class EngineeringTaskPledge(models.Model):
@@ -39,7 +40,7 @@ class ProjectTask(models.Model):
 
     def action_generate_pledges_pdf(self):
         """ 
-        1. Finds all pledges for this task.
+        1. Finds all completed pledges for this task.
         2. Replaces placeholders {{...}} with real data.
         3. Saves it to generated_html.
         4. Calls the PDF report action.
@@ -51,19 +52,34 @@ class ProjectTask(models.Model):
         partner_name = project.partner_id.name or "__________________"
         date_today = datetime.date.today().strftime("%Y/%m/%d")
         
+        # --- FIX 1: Safely get the text name from the new Many2one fields ---
+        gov_name = project.governorate_id.name if project.governorate_id else "__________________"
+        reg_name = project.region_id.name if project.region_id else "__________________"
+        
         # Map values. If empty, print an empty line.
         replacements = {
             '{{partner_name}}': partner_name,
             '{{date}}': date_today,
-            '{{governorate}}': project.region or "__________________", # Region holds Governorate in your setup
-            '{{region}}': project.region or "__________________",
+            '{{governorate}}': gov_name, # FIXED
+            '{{region}}': reg_name,      # FIXED
             '{{block_no}}': project.block_no or "____",
             '{{plot_no}}': project.plot_no or "____",
             '{{street_no}}': project.street_no or "____",
         }
 
-        # Process each pledge in the list
-        for pledge in self.pledge_ids:
+        # --- FIX 2: Filter to ONLY get pledges where 'متوفر' is checked ---
+        completed_pledges = self.pledge_ids.filtered(lambda p: p.is_completed)
+        uncompleted_pledges = self.pledge_ids - completed_pledges
+
+        if not completed_pledges:
+            raise UserError(_("عفواً، لا توجد تعهدات متوفرة (تم اختيارها) لطباعتها. يرجى تفعيل خيار 'متوفر' بجانب التعهد المطلوب أولاً."))
+
+        # Clear HTML for uncompleted pledges so they don't accidentally print blank pages from previous clicks
+        for uncompleted in uncompleted_pledges:
+            uncompleted.generated_html = False
+
+        # Process ONLY the completed pledges
+        for pledge in completed_pledges:
             if not pledge.template_id.body_html:
                 continue
                 
