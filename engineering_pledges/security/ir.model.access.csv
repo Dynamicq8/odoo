@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_engineering_pledge_template,engineering.pledge.template,model_engineering_pledge_template,base.group_user,1,1,1,1
+access_pledge_template_user,pledge.template.user,model_engineering_pledge_template,base.group_user,1,1,1,1
+access_task_pledge_user,task.pledge.user,model_engineering_task_pledge,base.group_user,1,1,1,1
