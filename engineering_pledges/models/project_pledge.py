@@ -70,6 +70,13 @@ class ProjectTask(models.Model):
 
         project = self.project_id
         
+        # --- IMPORTANT FIX 1: Ensure project has a partner ---
+        if not project.partner_id:
+            raise UserError(_("لا يمكن إنشاء تعهدات بدون عميل مرتبط بالمشروع. يرجى تعيين عميل للمشروع أولاً."))
+        
+        # Store the partner ID for use in sign_request_items
+        project_partner_id = project.partner_id.id
+
         # Prepare the variables dictionary. 
         # IMPORTANT: The keys here MUST match the "Name" you give to the text fields inside the Odoo Sign App.
         replacements = {
@@ -98,21 +105,26 @@ class ProjectTask(models.Model):
             # Prepare auto-filled items for the Sign Request
             sign_request_items = []
             for item in template.sign_item_ids:
-                # If the name of the field you dragged in the Sign app matches our dictionary
+                # --- IMPORTANT FIX 2: Add partner_id to each sign_request_item ---
+                item_vals = {
+                    'role_id': role_id,
+                    'sign_item_id': item.id,
+                    'partner_id': project_partner_id, # This links the item to the project's partner
+                }
+                
+                # If the name of the field you dragged in the Sign app matches our dictionary, pre-fill it
                 if item.name in replacements:
-                    sign_request_items.append((0, 0, {
-                        'role_id': role_id,
-                        'sign_item_id': item.id,
-                        'value': str(replacements[item.name]),
-                    }))
+                    item_vals['value'] = str(replacements[item.name])
+                
+                sign_request_items.append((0, 0, item_vals))
 
             # Create the actual Sign Request (The Document)
             sign_request = self.env['sign.request'].create({
                 'template_id': template.id,
                 'reference': f"{template.name} - {project.name}",
-                'approver_id': project.partner_id.id, # <--- CHANGED TO approver_id
+                # --- IMPORTANT FIX 3: Remove 'approver_id' from here ---
                 'request_item_ids': sign_request_items,
-                'state': 'sent',
+                'state': 'sent', # Mark as ready/sent
             })
 
             # Link the generated document to the pledge line
