@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- We removed the CRM view inheritance entirely because we are just using Odoo's default CRM fields now -->
+    <!-- Disable Quick Create in CRM Kanban -->
+    <record id="crm_kanban_disable_quick_create" model="ir.ui.view">
+        <field name="name">crm.lead.kanban.no.quick.create</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+        <field name="arch" type="xml">
+            <!-- This turns off the small popup and forces the full page to open -->
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="quick_create">false</attribute>
+            </xpath>
+        </field>
+    </record>
 </odoo>
