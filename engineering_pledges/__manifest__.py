@@ -6,6 +6,7 @@
     'depends': [
         'base',
         'web',
+        'sign',
         'project',
         'engineering_project',
     ],

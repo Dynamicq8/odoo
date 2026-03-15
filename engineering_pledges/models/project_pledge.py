@@ -3,17 +3,33 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import datetime
 
+# 1. Add our custom fields to Odoo's native Sign Template
+class SignTemplate(models.Model):
+    _inherit = 'sign.template'
+
+    building_type = fields.Selection([
+        ('residential', 'سكن خاص'), ('investment', 'استثماري'), 
+        ('commercial', 'تجاري'), ('industrial', 'صناعي'), 
+        ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), 
+        ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع'), ('all', 'جميع الأنواع')
+    ], string="نوع العقار (Building Type)", default='all')
+    
+    is_municipality_pledge = fields.Boolean(string="تعهد بلدية؟", default=False)
+
+# 2. Update the Pledge Line to link to Sign templates
 class EngineeringTaskPledge(models.Model):
     _name = 'engineering.task.pledge' 
     _description = 'Task Municipality Pledge'
 
     task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
-    template_id = fields.Many2one('engineering.pledge.template', string='نوع التعهد (Pledge Type)', required=True)
-    is_completed = fields.Boolean(string='متوفر / تم التوقيع (Completed)', default=False)
+    # Link to Odoo's Sign Template instead of HTML template
+    sign_template_id = fields.Many2one('sign.template', string='نوع التعهد (Pledge PDF)', required=True, domain=[('is_municipality_pledge', '=', True)])
+    is_completed = fields.Boolean(string='متوفر / مطلوب (Required)', default=False)
     
-    # --- THE FIX IS HERE: ADDED sanitize=False ---
-    generated_html = fields.Html(string='Generated Content', sanitize=False) 
+    # Store the generated document so we can track it
+    sign_request_id = fields.Many2one('sign.request', string='المستند المولد (Generated Doc)', readonly=True)
 
+# 3. Update the Project Task
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
@@ -21,73 +37,96 @@ class ProjectTask(models.Model):
     pledge_ids = fields.One2many('engineering.task.pledge', 'task_id', string='تعهدات البلدية (Pledges)')
 
     def action_load_required_pledges(self):
-        """ Loads pledges based on the project's building type """
+        """ Loads PDF Sign templates based on the project's building type """
         for task in self:
             building_type = task.project_id.building_type
             if not building_type:
                 continue
 
-            domain = [('active', '=', True), ('building_type', 'in', [building_type, 'all'])]
-            templates = self.env['engineering.pledge.template'].search(domain)
-            existing_template_ids = task.pledge_ids.mapped('template_id.id')
+            # Find Sign Templates that are marked as pledges and match the building type
+            domain = [('is_municipality_pledge', '=', True), ('building_type', 'in', [building_type, 'all'])]
+            templates = self.env['sign.template'].search(domain)
+            
+            existing_template_ids = task.pledge_ids.mapped('sign_template_id.id')
             
             for template in templates:
                 if template.id not in existing_template_ids:
                     self.env['engineering.task.pledge'].create({
                         'task_id': task.id,
-                        'template_id': template.id,
+                        'sign_template_id': template.id,
                     })
 
     def action_generate_pledges_pdf(self):
         """ 
-        1. Finds all completed pledges for this task.
-        2. Replaces placeholders {{...}} with real data.
-        3. Saves it to generated_html.
-        4. Calls the PDF report action.
+        1. Finds all completed pledges.
+        2. Creates a Sign Request for each.
+        3. Auto-fills the variables based on the field names in the PDF.
         """
         self.ensure_one()
         
-        # Get project data to fill the templates
+        completed_pledges = self.pledge_ids.filtered(lambda p: p.is_completed)
+        if not completed_pledges:
+            raise UserError(_("عفواً، يرجى تفعيل خيار 'مطلوب' بجانب التعهد المطلوب أولاً."))
+
         project = self.project_id
-        partner_name = project.partner_id.name or "__________________"
-        date_today = datetime.date.today().strftime("%Y/%m/%d")
         
-        # --- FIX 1: Safely get the text name from the new Many2one fields ---
-        gov_name = project.governorate_id.name if project.governorate_id else "__________________"
-        reg_name = project.region_id.name if project.region_id else "__________________"
-        
-        # Map values. If empty, print an empty line.
+        # Prepare the variables dictionary. 
+        # IMPORTANT: The keys here MUST match the "Name" you give to the text fields inside the Odoo Sign App.
         replacements = {
-            '{{partner_name}}': partner_name,
-            '{{date}}': date_today,
-            '{{governorate}}': gov_name, # FIXED
-            '{{region}}': reg_name,      # FIXED
-            '{{block_no}}': project.block_no or "____",
-            '{{plot_no}}': project.plot_no or "____",
-            '{{street_no}}': project.street_no or "____",
+            'partner_name': project.partner_id.name or "",
+            'date': datetime.date.today().strftime("%Y/%m/%d"),
+            'governorate': project.governorate_id.name if project.governorate_id else "",
+            'region': project.region_id.name if project.region_id else "",
+            'block_no': project.block_no or "",
+            'plot_no': project.plot_no or "",
+            'street_no': project.street_no or "",
         }
 
-        # --- FIX 2: Filter to ONLY get pledges where 'متوفر' is checked ---
-        completed_pledges = self.pledge_ids.filtered(lambda p: p.is_completed)
-        uncompleted_pledges = self.pledge_ids - completed_pledges
+        # Get the default role (usually Customer/Partner) to assign the document to
+        role_id = self.env.ref('sign.sign_item_role_customer').id
 
-        if not completed_pledges:
-            raise UserError(_("عفواً، لا توجد تعهدات متوفرة (تم اختيارها) لطباعتها. يرجى تفعيل خيار 'متوفر' بجانب التعهد المطلوب أولاً."))
+        generated_requests = self.env['sign.request']
 
-        # Clear HTML for uncompleted pledges so they don't accidentally print blank pages from previous clicks
-        for uncompleted in uncompleted_pledges:
-            uncompleted.generated_html = False
-
-        # Process ONLY the completed pledges
         for pledge in completed_pledges:
-            if not pledge.template_id.body_html:
+            if pledge.sign_request_id and pledge.sign_request_id.state != 'canceled':
+                # If a document is already generated for this line, just add it to the list to view later
+                generated_requests |= pledge.sign_request_id
                 continue
-                
-            raw_html = pledge.template_id.body_html
-            for key, value in replacements.items():
-                raw_html = raw_html.replace(key, str(value))
-                
-            pledge.generated_html = raw_html
 
-        # Trigger the PDF download
-        return self.env.ref('engineering_pledges.action_report_unified_pledges').report_action(self)
+            template = pledge.sign_template_id
+            
+            # Prepare auto-filled items for the Sign Request
+            sign_request_items = []
+            for item in template.sign_item_ids:
+                # If the name of the field you dragged in the Sign app matches our dictionary
+                if item.name in replacements:
+                    sign_request_items.append((0, 0, {
+                        'role_id': role_id,
+                        'sign_item_id': item.id,
+                        'value': str(replacements[item.name]),
+                    }))
+
+            # Create the actual Sign Request (The Document)
+            sign_request = self.env['sign.request'].create({
+                'template_id': template.id,
+                'reference': f"{template.name} - {project.name}",
+                'partner_id': project.partner_id.id,
+                'request_item_ids': sign_request_items,
+                'state': 'sent', # Mark as ready/sent
+            })
+
+            # Link the generated document to the pledge line
+            pledge.sign_request_id = sign_request.id
+            generated_requests |= sign_request
+
+        # Action to open the generated Sign Requests so the user can see/print them
+        if len(generated_requests) == 1:
+            return generated_requests.go_to_document()
+        else:
+            return {
+                'name': 'Generated Pledges',
+                'type': 'ir.actions.act_window',
+                'res_model': 'sign.request',
+                'view_mode': 'kanban,tree,form',
+                'domain': [('id', 'in', generated_requests.ids)],
+            }

@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Update Project Task View -->
     <record id="edit_task_form_inherit_pledges" model="ir.ui.view">
         <field name="name">project.task.form.inherit.pledges</field>
         <field name="model">project.task</field>
@@ -10,32 +11,58 @@
             </xpath>
             
             <xpath expr="//notebook" position="inside">
-                <page string="تعهدات البلدية (Pledges)" name="municipality_pledges" invisible="stage_sequence != 2">
+                <page string="تعهدات البلدية (Pledges PDFs)" name="municipality_pledges" invisible="stage_sequence != 2">
                     
                     <div class="mb-3">
                         <button name="action_load_required_pledges" 
-                                string="تحميل التعهدات (Load Pledges)" 
+                                string="تحميل التعهدات (Load PDF Templates)" 
                                 type="object" 
                                 class="btn-secondary" icon="fa-download"/>
                                 
-                        <!-- NEW BUTTON TO GENERATE PDF -->
                         <button name="action_generate_pledges_pdf" 
-                                string="طباعة التعهدات (Print Pledges PDF)" 
+                                string="إنشاء المستندات (Generate Documents)" 
                                 type="object" 
-                                class="btn-primary ms-2" icon="fa-print"
+                                class="btn-primary ms-2" icon="fa-file-pdf-o"
                                 invisible="not pledge_ids"/>
                     </div>
                     
                     <field name="pledge_ids">
-                        <tree editable="bottom" decoration-success="is_completed==True" decoration-danger="is_completed==False">
-                            <field name="template_id" options="{'no_create': True}"/>
+                        <tree editable="bottom" decoration-success="is_completed==True">
+                            <field name="sign_template_id" options="{'no_create': True}"/>
                             <field name="is_completed" widget="boolean_toggle"/>
+                            <field name="sign_request_id" widget="many2one_button"/>
                         </tree>
                     </field>
-
                 </page>
             </xpath>
-
         </field>
     </record>
+
+    <!-- Inherit Sign Template Form to add your custom fields -->
+    <record id="sign_template_view_form_inherit_pledge" model="ir.ui.view">
+        <field name="name">sign.template.form.inherit.pledge</field>
+        <field name="model">sign.template</field>
+        <field name="inherit_id" ref="sign.sign_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='authorized_ids']" position="after">
+                <field name="is_municipality_pledge" widget="boolean_toggle"/>
+                <field name="building_type" invisible="is_municipality_pledge == False"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Menu shortcut in Project to open Sign Templates -->
+    <record id="action_project_sign_templates" model="ir.actions.act_window">
+        <field name="name">قوالب تعهدات البلدية (PDFs)</field>
+        <field name="res_model">sign.template</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="domain">[('is_municipality_pledge', '=', True)]</field>
+        <field name="context">{'default_is_municipality_pledge': True}</field>
+    </record>
+
+    <menuitem id="menu_project_pledge_sign_templates"
+              name="قوالب التعهدات (PDF)"
+              parent="project.menu_project_config"
+              action="action_project_sign_templates"
+              sequence="50"/>
 </odoo>
