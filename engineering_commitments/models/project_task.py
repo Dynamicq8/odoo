@@ -35,7 +35,7 @@ class ProjectTask(models.Model):
                     })
 
     def action_generate_commitments_pdf(self):
-        """ Creates Sign Requests using the native template.create_sign_request method. """
+        """ Attempts to create Sign Requests by creating the request first, then adding items. """
         self.ensure_one()
 
         required_commitments = self.commitment_ids.filtered(lambda p: p.is_required)
@@ -54,7 +54,7 @@ class ProjectTask(models.Model):
         replacements = {
             'Name': project.partner_id.name or "",
             'Date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-            'Governorate': project.governorate_id.name if hasattr(project, 'governorate_id') and project.governorate_id else "", # FIXED TYPO HERE
+            'Governorate': project.governorate_id.name if hasattr(project, 'governorate_id') and project.governorate_id else "",
             'Region': project.region_id.name if hasattr(project, 'region_id') and project.region_id else "",
             'Block': project.block_no or "" if hasattr(project, 'block_no') else "",
             'Plot': project.plot_no or "" if hasattr(project, 'plot_no') else "",
@@ -73,25 +73,60 @@ class ProjectTask(models.Model):
             if not template.sign_item_ids:
                 raise UserError(_(f"Template '{template.name}' has no fields/signature configured. Please add them in the Sign app."))
 
-            _logger.info(f"Attempting to create sign request for template: {template.name} (ID: {template.id}) using template.create_sign_request()")
-            
-            sign_request = template.create_sign_request(
-                signer_ids=[
-                    {
-                        'partner_id': project.partner_id.id,
-                        'role_id': role_customer.id,
-                    }
-                ],
-                reference=f"{template.name} - {project.name}",
-            )
-            
-            _logger.info(f"Successfully created sign request: {sign_request.id} using template.create_sign_request().")
+            _logger.info(f"Attempting to create sign.request for template: {template.name} (ID: {template.id}) - Strategy: Create request, then add items.")
+
+            # ====================================================================
+            # EXPERIMENTAL STRATEGY: Create sign.request first (without items),
+            # then add items via write.
+            # ====================================================================
+            sign_request = self.env['sign.request'].create({
+                'template_id': template.id,
+                'reference': f"{template.name} - {project.name}",
+                # Do NOT include 'request_item_ids' here yet
+            })
+            _logger.info(f"Successfully created empty sign request: {sign_request.id}.")
+
+            # Now, prepare the items to add
+            request_item_vals_list = []
+            for template_item in template.sign_item_ids:
+                partner_id = project.partner_id.id if template_item.responsible_id.id == role_customer.id else False
+                value = replacements.get(template_item.name, "") if template_item.name else ""
+
+                # Using 'sign_item_type_id' again here, as it's the most standard
+                # If this fails, we NEED to know the actual field name from developer tools.
+                item_vals = {
+                    'sign_item_type_id': template_item.type_id.id, # <--- Re-attempting this standard field name
+                    'name': template_item.name,
+                    'required': template_item.required,
+                    'responsible_id': template_item.responsible_id.id,
+                    'partner_id': partner_id,
+                    'page': template_item.page,
+                    'posX': template_item.posX,
+                    'posY': template_item.posY,
+                    'width': template_item.width,
+                    'height': template_item.height,
+                    'value': str(value),
+                }
+                _logger.info(f"Prepared item values for write: {item_vals}")
+                request_item_vals_list.append((0, 0, item_vals))
+
+            # Attempt to write the items to the newly created sign_request
+            _logger.info(f"Attempting to write request_item_ids to sign_request {sign_request.id}")
+            try:
+                sign_request.write({'request_item_ids': request_item_vals_list})
+                _logger.info(f"Successfully wrote request_item_ids to sign_request {sign_request.id}")
+            except Exception as e:
+                _logger.error(f"Failed to write request_item_ids to sign_request {sign_request.id}: {e}")
+                sign_request.unlink() # Clean up the request if item creation failed
+                raise UserError(_(f"Failed to add items to the sign request. This usually means a field name for the sign item type is incorrect, or a required field is missing. Original error: {e}"))
+
 
             # After creation, iterate through the *newly created* request items
-            # to apply the autofill values.
-            for item in sign_request.request_item_ids:
-                if item.name and item.name in replacements:
-                    item.write({'value': replacements[item.name]})
+            # to apply the autofill values. (This loop is technically redundant now
+            # since we set values during write, but kept for consistency)
+            # for item in sign_request.request_item_ids:
+            #     if item.name and item.name in replacements:
+            #         item.write({'value': replacements[item.name]})
 
             # Send the request
             sign_request.action_sent()
