@@ -1,5 +1,5 @@
 # models/sign_template_extension.py
-from odoo import models, fields, api
+from odoo import models, fields
 
 class SignTemplate(models.Model):
     _inherit = 'sign.template'
@@ -8,8 +8,7 @@ class SignTemplate(models.Model):
         string='Is Commitment',
         help='If checked, this template can be used as an engineering commitment for tasks.'
     )
-    
-    # Assuming 'building_type' is a selection field, adjust as needed
+
     building_type = fields.Selection([
         ('residential', 'Residential (سكني)'),
         ('commercial', 'Commercial (تجاري)'),
