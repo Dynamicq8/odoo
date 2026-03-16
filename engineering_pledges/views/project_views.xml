@@ -63,21 +63,30 @@
     </record>
 
 
-    <!-- Action -->
-    <record id="action_project_sign_templates" model="ir.actions.act_window">
-        <field name="name">قوالب تعهدات البلدية (PDFs)</field>
-        <field name="res_model">sign.template</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('is_municipality_pledge','=',True)]</field>
-        <field name="context">{'default_is_municipality_pledge': True}</field>
-    </record>
+   <odoo>
 
+```
+<!-- Action: Create Sign Template (opens form in modal) -->
+<record id="action_sign_template_creation" model="ir.actions.act_window">
+    <field name="name">إنشاء قالب تعهد</field>
+    <field name="res_model">sign.template</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+    <!-- Context automatically sets 'is_municipality_pledge' to True when creating -->
+    <field name="context" eval="{'default_is_municipality_pledge': True}"/>
+</record>
 
-    <!-- Menu -->
-    <menuitem id="menu_project_pledge_sign_templates"
-              name="قوالب التعهدات (PDF)"
-              parent="project.menu_project_config"
-              action="action_project_sign_templates"
-              sequence="50"/>
+<!-- NEW Menu Item: Link to create a new template directly -->
+<!-- This menu will be placed under the main Sign app Templates menu -->
+
+<menuitem id="menu_create_new_sign_template"
+          name="إنشاء قالب جديد"
+          parent="sign.menu_sign_templates"
+          action="action_sign_template_creation"
+          sequence="10"/>
+```
+
+</odoo>
+
 
 </odoo>
