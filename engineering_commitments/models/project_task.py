@@ -120,9 +120,9 @@ class ProjectTask(models.Model):
                 _logger.warning(f"Failed to autofill values for sign request {sign_request.id}: {e}")
 
             # =========================================================
-            # STEP 4: SEND & LINK
+            # STEP 4: LINK
+            # Removed action_sent() for Odoo 17 compatibility
             # =========================================================
-            sign_request.action_sent()
             commitment.sign_request_id = sign_request.id
             generated_requests |= sign_request
 
