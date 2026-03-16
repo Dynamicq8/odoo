@@ -1,31 +1,38 @@
 <odoo>
+
     <!-- Update Project Task View -->
     <record id="edit_task_form_inherit_pledges" model="ir.ui.view">
         <field name="name">project.task.form.inherit.pledges</field>
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
-            
+
             <xpath expr="//field[@name='project_id']" position="after">
                 <field name="stage_sequence" invisible="1"/>
             </xpath>
-            
+
             <xpath expr="//notebook" position="inside">
-                <page string="تعهدات البلدية (Pledges PDFs)" name="municipality_pledges" invisible="stage_sequence != 2">
-                    
+                <page string="تعهدات البلدية (Pledges PDFs)"
+                      name="municipality_pledges"
+                      attrs="{'invisible': [('stage_sequence','!=',2)]}">
+
                     <div class="mb-3">
-                        <button name="action_load_required_pledges" 
-                                string="تحميل التعهدات (Load PDF Templates)" 
-                                type="object" 
-                                class="btn-secondary" icon="fa-download"/>
-                                
-                        <button name="action_generate_pledges_pdf" 
-                                string="إنشاء المستندات (Generate Documents)" 
-                                type="object" 
-                                class="btn-primary ms-2" icon="fa-file-pdf-o"
-                                invisible="not pledge_ids"/>
+
+                        <button name="action_load_required_pledges"
+                                string="تحميل التعهدات (Load PDF Templates)"
+                                type="object"
+                                class="btn-secondary"
+                                icon="fa-download"/>
+
+                        <button name="action_generate_pledges_pdf"
+                                string="إنشاء المستندات (Generate Documents)"
+                                type="object"
+                                class="btn-primary ms-2"
+                                icon="fa-file-pdf-o"
+                                attrs="{'invisible': [('pledge_ids','=',False)]}"/>
+
                     </div>
-                    
+
                     <field name="pledge_ids">
                         <tree editable="bottom" decoration-success="is_completed==True">
                             <field name="sign_template_id" options="{'no_create': True}"/>
@@ -33,10 +40,13 @@
                             <field name="sign_request_id" widget="many2one_button"/>
                         </tree>
                     </field>
+
                 </page>
             </xpath>
+
         </field>
     </record>
+
 
     <!-- Inherit Sign Template Form to add your custom fields -->
     <record id="sign_template_view_form_inherit_pledge" model="ir.ui.view">
@@ -44,12 +54,16 @@
         <field name="model">sign.template</field>
         <field name="inherit_id" ref="sign.sign_template_view_form"/>
         <field name="arch" type="xml">
+
             <xpath expr="//field[@name='authorized_ids']" position="after">
                 <field name="is_municipality_pledge" widget="boolean_toggle"/>
-                <field name="building_type" invisible="is_municipality_pledge == False"/>
+                <field name="building_type"
+                       attrs="{'invisible': [('is_municipality_pledge','=',False)]}"/>
             </xpath>
+
         </field>
     </record>
+
 
     <!-- Menu shortcut in Project to open Sign Templates -->
     <record id="action_project_sign_templates" model="ir.actions.act_window">
@@ -60,9 +74,11 @@
         <field name="context">{'default_is_municipality_pledge': True}</field>
     </record>
 
+
     <menuitem id="menu_project_pledge_sign_templates"
               name="قوالب التعهدات (PDF)"
               parent="project.menu_project_config"
               action="action_project_sign_templates"
               sequence="50"/>
+
 </odoo>
