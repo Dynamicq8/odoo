@@ -64,7 +64,7 @@ class ProjectTask(models.Model):
         }
 
         # --- TEST-SPECIFIC CODE: Find and use the simple test template ---
-        test_template_name = '__TEST__ Simple Commitment Template' 
+        test_template_name = '__TEST__ Super Simple PDF Template' 
         template = self.env['sign.template'].search([('name', '=', test_template_name)], limit=1)
         if not template:
             raise UserError(_(f"TEST FAILED: Template '{test_template_name}' not found! "
