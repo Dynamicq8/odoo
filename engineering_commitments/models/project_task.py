@@ -16,13 +16,15 @@ class ProjectTask(models.Model):
 
     def action_load_commitments(self):
         for task in self:
-            building_type = task.project_id.building_type if hasattr(task.project_id, 'building_type') else False
+            building_type = getattr(task.project_id, 'building_type', False)
             if not building_type:
                 domain = [('is_commitment', '=', True), ('building_type', '=', 'all')]
             else:
                 domain = [('is_commitment', '=', True), ('building_type', 'in', [building_type, 'all'])]
+            
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = task.commitment_ids.mapped('sign_template_id.id')
+            
             for template in templates:
                 if template.id not in existing_template_ids:
                     self.env['engineering.task.commitment'].create({
@@ -46,14 +48,15 @@ class ProjectTask(models.Model):
             raise UserError(_("Error: The 'Customer' role could not be found in the Sign application."))
 
         # --- AUTOFILL DICTIONARY ---
+        # Using getattr() is the safest way to pull fields that might not exist in all Odoo setups
         replacements = {
             'Name': project.partner_id.name or "",
             'Date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-            'Governorate': project.governorate_id.name if hasattr(project, 'governorate_id') and project.governorate_id else "",
-            'Region': project.region_id.name if hasattr(project, 'region_id') and project.region_id else "",
-            'Block': project.block_no or "" if hasattr(project, 'block_no') else "",
-            'Plot': project.plot_no or "" if hasattr(project, 'plot_no') else "",
-            'Street': project.street_no or "" if hasattr(project, 'street_no') else "",
+            'Governorate': getattr(project, 'governorate_id', False) and project.governorate_id.name or "",
+            'Region': getattr(project, 'region_id', False) and project.region_id.name or "",
+            'Block': getattr(project, 'block_no', False) or "",
+            'Plot': getattr(project, 'plot_no', False) or "",
+            'Street': getattr(project, 'street_no', False) or "",
         }
 
         generated_requests = self.env['sign.request']
@@ -99,9 +102,8 @@ class ProjectTask(models.Model):
                         
                         if signer_record:
                             try:
-                                # We MUST include sign_request_id here or the database rejects it silently!
+                                # Removed 'sign_request_id'. The model only takes item_id, template_field_id, and value.
                                 self.env['sign.request.item.value'].sudo().create({
-                                    'sign_request_id': sign_request.id,  # <--- THIS WAS THE MISSING LINK
                                     'sign_request_item_id': signer_record[0].id,
                                     'sign_item_id': template_field.id,
                                     'value': str(val_to_insert),
@@ -116,6 +118,7 @@ class ProjectTask(models.Model):
         if not generated_requests:
             return True
 
+        # 5. Return Action
         action = self.env['ir.actions.actions']._for_xml_id('sign.sign_request_action')
         if len(generated_requests) == 1:
             action.update({
