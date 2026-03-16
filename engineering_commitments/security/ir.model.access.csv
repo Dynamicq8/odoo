@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_eng_task_commitment_user,Engineering Commitment User,model_engineering_task_commitment,base.group_user,1,1,1,1
