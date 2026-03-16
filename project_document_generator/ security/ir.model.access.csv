@@ -1,3 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_project_document_pledge_user,Project Document Pledge User,model_project_document_pledge,base.group_user,1,1,1,1
-access_project_document_pledge_manager,Project Document Pledge Manager,model_project_document_pledge,base.group_project_manager,1,1,1,1
