@@ -5,40 +5,15 @@
         <field name="model">sign.template</field>
         <field name="inherit_id" ref="sign.sign_template_view_form"/>
         <field name="arch" type="xml">
-
-            <!--
-                We'll place our fields inside a new group for better organization.
-                Using `notebook/page[@name='settings']` or `sheet/group[1]` can be good
-                places depending on the exact layout of the base sign.template form.
-
-                Let's use `notebook` and put it on a new 'Settings' page, or an existing one,
-                if one exists in the base view. If no notebook, putting it directly in the sheet.
-                For robust placement, let's put it at the end of the existing notebook,
-                or within the main sheet if there's no notebook in the base view we want to use.
-            -->
-
             <xpath expr="//sheet" position="inside">
                 <group string="Engineering Commitment Settings (إعدادات التعهد الهندسي)">
                     <group>
                         <field name="is_commitment"/>
-                        <!-- Make building_type visible only if 'is_commitment' is checked -->
-                        <field name="building_type" attrs="{'invisible': [('is_commitment', '=', False)]}"/>
+                        <!-- Remove attrs. Visibility will be handled in JS or using the new 'setup' component. -->
+                        <field name="building_type"/>
                     </group>
                 </group>
             </xpath>
-
-            <!--
-            Alternative placement (if you prefer it in an existing 'Settings' tab if the base view has one):
-            <xpath expr="//notebook/page[@name='settings']" position="inside">
-                 <group string="Engineering Commitment Settings (إعدادات التعهد الهندسي)">
-                    <group>
-                        <field name="is_commitment"/>
-                        <field name="building_type" attrs="{'invisible': [('is_commitment', '=', False)]}"/>
-                    </group>
-                </group>
-            </xpath>
-            -->
-
         </field>
     </record>
 </odoo>
