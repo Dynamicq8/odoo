@@ -6,8 +6,8 @@
             model="project.task"
             string="Project Commitment Document"
             report_type="qweb-pdf"
-            name="your_module_name.report_project_commitment_document"
-            file="your_module_name.report_project_commitment_document"
+            name="engineering_commitments.report_project_commitment_document"
+            file="engineering_commitments.report_project_commitment_document"
             print_report_name="'Commitment - %s' % (object.project_id.name or 'N/A')"
         />
     </data>
