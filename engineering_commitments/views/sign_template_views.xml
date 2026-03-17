@@ -5,18 +5,6 @@
         <field name="model">sign.template</field>
         <field name="inherit_id" ref="sign.sign_template_view_form"/>
         <field name="arch" type="xml">
-            
-            <!-- We add position="before" the sheet to CREATE the header -->
-            <xpath expr="//sheet" position="before">
-                <header>
-                    <button name="action_rename_template_fields" 
-                            type="object" 
-                            string="Rename Fields for Autofill" 
-                            class="oe_highlight"
-                            groups="base.group_system"/>
-                </header>
-            </xpath>
-
             <xpath expr="//sheet" position="inside">
                 <group string="Engineering Commitment Settings (إعدادات التعهد الهندسي)">
                     <group>
@@ -25,7 +13,6 @@
                     </group>
                 </group>
             </xpath>
-
         </field>
     </record>
 </odoo>
