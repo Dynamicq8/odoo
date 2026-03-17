@@ -102,7 +102,7 @@ class ProjectTask(models.Model):
                 'request_item_ids': signers_list_vals,
                 'state': 'sent', # Important: Create in 'sent' state before marking as signed
                 'mail_sent': False, # Prevent initial email sending
-                'signer_ids': [(6, 0, [item['partner_id'] for item in signers_list_vals if item['partner_id']])]
+'signer_ids': [(6, 0, [item[2]['partner_id'] for item in signers_list_vals if item[2]['partner_id']])]
             })
 
             # STEP 2: Fill the fields with data
