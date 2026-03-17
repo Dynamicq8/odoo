@@ -8,17 +8,16 @@
         'base',
         'sign',
         'project',
-        'engineering_project', # Assuming your custom project fields are here
+        'engineering_project',
     ],
     'data': [
         'security/ir.model.access.csv',
         'views/sign_template_views.xml',
-                'reports/project_commitment_report.xml', # <-- NEW FILE
-        'views/report_project_commitment_document.xml', # <-- NEW FILE
-
+        'reports/project_commitment_report.xml', # <-- Make sure this line is exactly here
+        'views/report_project_commitment_document.xml', # <-- Make sure this line is exactly here
         'views/project_task_views.xml',
     ],
-     'assets': {
+    'assets': {
         'web.assets_backend': [
             'engineering_commitments/static/src/views/sign_template_form_view.js',
             'engineering_commitments/static/src/xml/sign_template_form_fields.xml',
