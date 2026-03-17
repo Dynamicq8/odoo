@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_project_commitment_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center">
+                            <h2>Commitment Document</h2>
+                            <h3 t-field="doc.project_id.name"/>
+                        </div>
+
+                        <div class="row mt32 mb32">
+                            <div class="col-6">
+                                <strong>Customer:</strong> <span t-field="doc.project_id.partner_id.name"/><br/>
+                                <strong>Date:</strong> <span t-esc="datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/><br/>
+                                <strong>Project Ref:</strong> <span t-field="doc.project_id.name"/><br/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Governorate:</strong> <span t-field="doc.project_id.governorate_id.name"/><br/>
+                                <strong>Region:</strong> <span t-field="doc.project_id.region_id.name"/><br/>
+                                <strong>Block No:</strong> <span t-field="doc.project_id.block_no"/><br/>
+                                <strong>Plot No:</strong> <span t-field="doc.project_id.plot_no"/><br/>
+                            </div>
+                        </div>
+
+                        <p class="mt32">
+                            This document outlines the required commitments for the above-referenced project.
+                            By generating this document, the customer implicitly agrees to the terms specified in these commitments.
+                        </p>
+
+                        <h3 class="mt32">Required Commitments:</h3>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Commitment Name</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.commitment_ids.filtered(lambda p: p.is_required)" t-as="commitment">
+                                    <tr>
+                                        <td><span t-field="commitment.sign_template_id.name"/></td>
+                                        <td><span t-field="commitment.sign_template_id.note"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div class="row mt64">
+                            <div class="col-6 text-center">
+                                <p>______________________________</p>
+                                <p>
+                                    <strong>Customer Name:</strong> <span t-field="doc.project_id.partner_id.name"/>
+                                </p>
+                                <p>
+                                    <strong>Date:</strong> <span t-esc="datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+                                </p>
+                                <p>(Automatically populated upon generation)</p>
+                            </div>
+                            <div class="col-6 text-center">
+                                <p>______________________________</p>
+                                <p>
+                                    <strong>Company Representative:</strong> <span t-field="user.name"/>
+                                </p>
+                                <p>
+                                    <strong>Date:</strong> <span t-esc="datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+                                </p>
+                                <p>(Automatically populated upon generation)</p>
+                            </div>
+                        </div>
+
+                        <div class="oe_structure"/>
+                    </div>
+                </t>
+            </t>
+        </template>
+    </template>
+</odoo>
