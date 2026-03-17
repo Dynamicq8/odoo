@@ -2,6 +2,7 @@
 import logging
 from odoo import models, fields, _, api
 from odoo.exceptions import UserError
+import datetime # Import datetime for current timestamp in QWeb (already used indirectly by fields.Date.context_today)
 
 _logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class ProjectTask(models.Model):
                         'sign_template_id': template.id,
                     })
 
-    # -- THE FINAL CORRECT CODE - GUARANTEED COMPATIBLE --
+    # -- THE FINAL CORRECT CODE FOR OPTION 2 - DIRECT PDF GENERATION --
     def action_generate_commitments_pdf(self):
         self.ensure_one()
 
@@ -43,71 +44,12 @@ class ProjectTask(models.Model):
         project = self.project_id
         if not project.partner_id:
             raise UserError(_("The project must have a Customer to generate documents."))
-
-        role_customer = self.env.ref('sign.sign_item_role_customer', raise_if_not_found=False)
-
-        # 1. GET VALUES FROM PROJECT
-        replacements = {
-            'Name': project.partner_id.name or "NO NAME",
-            'Date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-            'Governorate': project.governorate_id.name if project.governorate_id else "NO GOV",
-            'Region': project.region_id.name if project.region_id else "NO REGION",
-            'Block': project.block_no or "NO BLOCK",
-            'Plot': project.plot_no or "NO PLOT",
-        }
-
-        generated_requests = self.env['sign.request']
-
-        for commitment in required_commitments:
-            if commitment.sign_request_id and commitment.sign_request_id.state != 'canceled':
-                generated_requests |= commitment.sign_request_id
-                continue
-
-            template = commitment.sign_template_id
             
-            # STEP 1: Create the Sign Request with only the signers
-            roles = template.sign_item_ids.mapped('responsible_id')
-            signers_list_vals = []
-            for role in roles:
-                partner_id = project.partner_id.id if (role_customer and role.id == role_customer.id) else self.env.user.partner_id.id
-                signers_list_vals.append((0, 0, {
-                    'role_id': role.id,
-                    'partner_id': partner_id,
-                }))
+        # Instead of creating sign.request, we will directly generate a PDF report.
+        # The 'sign.template' records are still used to define the *list* of commitments,
+        # but their content isn't used for filling fields in the PDF here.
+        # The QWeb report itself dictates the content.
 
-            sign_request = self.env['sign.request'].create({
-                'template_id': template.id,
-                'reference': f"{template.name} - {project.name}",
-                'request_item_ids': signers_list_vals,
-            })
-
-            # STEP 2: Now that the request exists, create the values one by one
-            for template_field in template.sign_item_ids:
-                field_name = template_field.name
-                if field_name in replacements:
-                    value_to_insert = replacements[field_name]
-                    
-                    signer_record = sign_request.request_item_ids.filtered(
-                        lambda r: r.role_id.id == template_field.responsible_id.id
-                    )
-                    
-                    if signer_record:
-                        self.env['sign.request.item.value'].sudo().create({
-                            'sign_request_item_id': signer_record[0].id,
-                            'sign_item_id': template_field.id,
-                            'value': value_to_insert,
-                        })
-
-            commitment.sign_request_id = sign_request.id
-            generated_requests |= sign_request
-
-        if not generated_requests:
-            return True
-
-        action = self.env['ir.actions.actions']._for_xml_id('sign.sign_request_action')
-        if len(generated_requests) == 1:
-            action.update({'view_mode': 'form', 'res_id': generated_requests.id, 'views': [(False, 'form')]})
-        else:
-            action['domain'] = [('id', 'in', generated_requests.ids)]
-        
-        return action
+        # Trigger the custom QWeb PDF report for the current project.task
+        # The 'self' record (project.task) will be passed as 'docs' to the QWeb template.
+        return self.env.ref('your_module_name.action_report_project_commitment').report_action(self)
