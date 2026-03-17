@@ -32,7 +32,7 @@ class ProjectTask(models.Model):
                         'sign_template_id': template.id,
                     })
 
-   def action_generate_commitments_pdf(self):
+    def action_generate_commitments_pdf(self):
         self.ensure_one()
 
         required_commitments = self.commitment_ids.filtered(lambda p: p.is_required)
@@ -50,8 +50,8 @@ class ProjectTask(models.Model):
         # ==========================================
         val_name = project.partner_id.name or "NO NAME"
         val_date = fields.Date.context_today(self).strftime("%Y/%m/%d")
-        val_gov = project.governorate_id.name if project.governorate_id else "NO GOV"
-        val_region = project.region_id.name if project.region_id else "NO REGION"
+        val_gov = project.governorate_id.name if getattr(project, 'governorate_id', False) else "NO GOV"
+        val_region = project.region_id.name if getattr(project, 'region_id', False) else "NO REGION"
         val_block = project.block_no or "NO BLOCK"
         val_plot = project.plot_no or "NO PLOT"
 
