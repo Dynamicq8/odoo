@@ -32,7 +32,7 @@ class ProjectTask(models.Model):
                         'sign_template_id': template.id,
                     })
 
-   def action_generate_commitments_pdf(self):
+    def action_generate_commitments_pdf(self):
         self.ensure_one()
         
         required_commitments = self.commitment_ids.filtered(lambda p: p.is_required)
@@ -46,7 +46,7 @@ class ProjectTask(models.Model):
         # ==========================================
         # DIAGNOSTIC X-RAY
         # ==========================================
-        xray_report = "Here are the secret names Odoo is using for your fields:\n\n"
+        xray_report = "Here are the exact secret names Odoo is using for your fields:\n\n"
         
         for item in template.sign_item_ids:
             field_name = str(item.name or 'EMPTY')
