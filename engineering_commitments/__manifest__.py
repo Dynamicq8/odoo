@@ -13,6 +13,8 @@
     'data': [
         'security/ir.model.access.csv',
         'views/sign_template_views.xml',
+                'reports/project_commitment_report.xml', # <-- NEW FILE
+
         'views/project_task_views.xml',
     ],
      'assets': {
