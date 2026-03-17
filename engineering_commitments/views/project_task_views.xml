@@ -6,32 +6,41 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             
-            <!-- Insert a new page inside the notebook at the bottom of the task -->
             <xpath expr="//notebook" position="inside">
                 <page string="Commitments (تعهدات)" name="engineering_commitments">
                     
-                    <!-- The Action Buttons -->
+                    <!-- Buttons -->
                     <div class="mb-3">
-                        <button name="action_load_commitments" 
-                                type="object" 
-                                string="Load Templates (تحميل القوالب)" 
-                                class="btn-primary" 
+                        <button name="action_load_commitments"
+                                type="object"
+                                string="Load Templates"
+                                class="btn-primary"
                                 icon="fa-download"/>
-                                
-                        <button name="action_generate_commitments_pdf" 
-                                type="object" 
-                                string="Generate PDFs (إنشاء المستندات)" 
-                                class="btn-success ms-2" 
+
+                        <button name="action_generate_commitments_pdf"
+                                type="object"
+                                string="Generate PDFs"
+                                class="btn-success ms-2"
                                 icon="fa-file-pdf-o"/>
                     </div>
 
-                    <!-- The Table (One2many Field) -->
+                    <!-- Table -->
                     <field name="commitment_ids">
                         <tree editable="bottom">
-                            <!-- Only show templates marked as commitments -->
-                            <field name="sign_template_id" domain="[('is_commitment', '=', True)]" options="{'no_create': True}"/>
+                            <field name="sign_template_id"
+                                   domain="[('is_commitment', '=', True)]"
+                                   options="{'no_create': True}"/>
+
                             <field name="is_required" widget="boolean_toggle"/>
-                            <field name="sign_request_id" readonly="1" string="Generated PDF"/>
+
+                            <field name="sign_request_id" readonly="1"/>
+
+                            <!-- 🔥 SIGN BUTTON -->
+                            <button name="action_sign_now"
+                                    type="object"
+                                    string="Sign Now"
+                                    class="btn-primary"
+                                    attrs="{'invisible': [('sign_request_id','=',False)]}"/>
                         </tree>
                     </field>
 
