@@ -46,7 +46,7 @@ class ProjectTask(models.Model):
         role_customer = self.env.ref('sign.sign_item_role_customer', raise_if_not_found=False)
         
         # ==========================================
-        # AUTOFILL MAPPING (Using your exact Python fields)
+        # AUTOFILL MAPPING
         # ==========================================
         replacements = {
             'Name': project.partner_id.name or "",
@@ -88,11 +88,15 @@ class ProjectTask(models.Model):
 
             # 3. Autofill Values
             for template_field in template.sign_item_ids:
-                # This checks the name of the field on the PDF
-                field_name = template_field.name or template_field.type_id.name
+                # ==========================================
+                # THE FIX IS HERE:
+                # We strictly use type_id.name so we match "Governorate" 
+                # instead of Odoo's hidden names like "Governorate 1"
+                # ==========================================
+                field_type_name = template_field.type_id.name 
                 
-                if field_name in replacements:
-                    val_to_insert = replacements[field_name]
+                if field_type_name in replacements:
+                    val_to_insert = replacements[field_type_name]
                     
                     if val_to_insert:
                         signer_record = sign_request.request_item_ids.filtered(
