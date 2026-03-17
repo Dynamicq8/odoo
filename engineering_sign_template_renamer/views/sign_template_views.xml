@@ -5,7 +5,9 @@
         <field name="model">sign.template</field>
         <field name="inherit_id" ref="sign.sign_template_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//header" position="after">
+            <!-- ORIGINAL LINE (causing error): <xpath expr="//header" position="after"> -->
+            <!-- NEW LINE: Target the <sheet> element and place the button INSIDE at the top -->
+            <xpath expr="//sheet" position="inside">
                 <button name="action_rename_template_fields"
                         string="Rename Autofill Fields (Dev)"
                         type="object"
