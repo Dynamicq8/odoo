@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sign_template_form_view_inherit_rename_fields" model="ir.ui.view">
+        <field name="name">sign.template.form.inherit.rename.fields</field>
+        <field name="model">sign.template</field>
+        <field name="inherit_id" ref="sign.sign_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="after">
+                <button name="action_rename_template_fields"
+                        string="Rename Autofill Fields (Dev)"
+                        type="object"
+                        class="oe_highlight"
+                        groups="base.group_system"
+                        help="Renames fields on this template to match autofill requirements from Python code."/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
