@@ -39,7 +39,9 @@ class SaleOrder(models.Model):
     block_no = fields.Char(string="القطعة")
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="مساحة الارض")
-
+ # ADD THESE TWO LINES:
+    governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة")
+    region_id = fields.Many2one('kuwait.region', string="المنطقة")
     project_id = fields.Many2one('project.project', string='Project', copy=False)
     
     quotation_stage_id = fields.Many2one(
