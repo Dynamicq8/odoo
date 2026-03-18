@@ -114,23 +114,6 @@
     </record>
 
 
-    <!-- ====================================================== -->
-    <!--  3. TASK KANBAN (DISABLE UNASSIGNED TASKS)             -->
-    <!-- ====================================================== -->
-    <record id="view_task_kanban_engineering_disable" model="ir.ui.view">
-        <field name="name">project.task.kanban.engineering.disable</field>
-        <field name="model">project.task</field>
-        <field name="inherit_id" ref="project.view_task_kanban"/>
-        <field name="arch" type="xml">
-            <!-- التأكد من استخدام اسم الحقل الصحيح الموجود في البايثون -->
-            <xpath expr="//templates" position="before">
-                <field name="is_current_user_assigned"/>
-            </xpath>
-            
-            <xpath expr="//t[@t-name='kanban-box']/div" position="attributes">
-                <attribute name="t-attf-style">#{record.is_current_user_assigned.raw_value ? '' : 'pointer-events: none; opacity: 0.6;'}</attribute>
-            </xpath>
-        </field>
-    </record>
+   
 
 </odoo>
