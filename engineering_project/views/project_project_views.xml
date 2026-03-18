@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- ============================================= -->
     <!--  1. MAIN PROJECT FORM (TEAM & BUTTONS)         -->
@@ -9,7 +10,6 @@
         <field name="arch" type="xml">
             
             <xpath expr="//header" position="inside">
-                <!-- ODOO 17 SYNTAX: Use 'invisible' attribute directly -->
                 <button name="action_start_workflow" 
                         string="بدء سير العمل (Start Workflow)" 
                         type="object" 
@@ -21,10 +21,7 @@
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_order_id" readonly="1"/>
                 
-                <!-- This field is now required for the button's visibility -->
                 <field name="workflow_started" invisible="1"/>
-                
-                <!-- The new field to track progress (can be left hidden) -->
                 <field name="triggered_steps" invisible="1"/>
                 
                 <group string="فريق العمل (Project Team)">
@@ -63,7 +60,7 @@
     </record>
 
     <!-- ====================================================== -->
-    <!--  2. TASK FORM (BUTTONS AND DYNAMIC CHECKLIST TABS)     -->
+    <!--  2. TASK FORM (BUTTONS AND DETAILS TEXTAREA)           -->
     <!-- ====================================================== -->
     <record id="view_task_form2_engineering_extended" model="ir.ui.view">
         <field name="name">project.task.form.engineering.extended</field>
@@ -82,30 +79,34 @@
 
             <xpath expr="//notebook" position="inside">
                 <page string="نموذج مكونات المشروع" name="project_details_form">
-                    <!-- HIDDEN WORKFLOW TRIGGER -->
                     <field name="workflow_step" invisible="1"/>
                     
                     <div class="mb-3 mt-2">
-                        <button name="action_load_default_phases" type="object" 
-                                string="تحميل المراحل الافتراضية (Load Default Phases)" 
-                                class="btn-secondary" icon="fa-list-ol"
-                                invisible="phase_ids != []"/>
                         <span class="text-muted ms-3">
-                            <i class="fa fa-info-circle"/> للمشاريع الاستثمارية/التجارية، يمكنك إضافة أدوار ومراحل جديدة يدوياً من الأسفل.
+                            <i class="fa fa-info-circle"/> يرجى كتابة مكونات المشروع والتفاصيل الإضافية هنا، ثم تحديد خيار "تم الانتهاء".
                         </span>
                     </div>
 
-                    <!-- DYNAMIC CHECKLIST TABLE -->
-                    <field name="phase_ids" context="{'default_task_id': active_id}">
-                        <tree editable="bottom" decoration-success="is_completed==True" decoration-muted="is_completed==False">
-                            <field name="sequence" widget="handle"/>
-                            <field name="floor_category" placeholder="مثال: الدور الثالث"/>
-                            <field name="name" placeholder="مثال: مرحلة أعمدة الدور الثالث"/>
-                            <field name="is_completed" widget="boolean_toggle"/>
-                        </tree>
-                    </field>
+                    <!-- TEXT AREA FIELD FOR PROJECT DETAILS -->
+                    <group>
+                        <field name="project_details_text" 
+                               widget="text" 
+                               placeholder="اكتب تفاصيل ومكونات المشروع هنا..." 
+                               nolabel="1" 
+                               colspan="2" 
+                               style="min-height: 250px; font-size: 15px;"/>
+                    </group>
+                    
+                    <!-- CHECKBOX -->
+                    <group>
+                        <field name="project_details_completed" widget="boolean_toggle"/>
+                    </group>
                 </page>
             </xpath>
         </field>
     </record>
+    
+    <!-- IMPORTANT: The Kanban view extension for disabling tasks is entirely removed. -->
+    <!-- If you had a file like project_task_views.xml in engineering_project, make sure it does NOT contain the kanban override either. -->
+
 </odoo>
