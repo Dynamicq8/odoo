@@ -702,4 +702,4 @@ class ProjectTaskPhase(models.Model):
     sequence = fields.Integer(string='التسلسل', default=10)
     floor_category = fields.Char(string='الدور (Floor)', required=True)
     name = fields.Char(string='المرحلة (Phase)', required=True)
-    is_completed = fields.Boolean(string='تم (Completed)', default=False) tha'ts the engineering_quationt models.py : # -*- coding: utf-8 -*-
+    is_completed = fields.Boolean(string='تم (Completed)', default=False) tha'ts the engineering_quationt models.py
