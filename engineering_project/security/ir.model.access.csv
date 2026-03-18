@@ -1,5 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_kuwait_governorate,kuwait.governorate.access,model_kuwait_governorate,base.group_user,1,1,1,1
-access_kuwait_region,kuwait.region.access,model_kuwait_region,base.group_user,1,1,1,1
-access_engineering_quotation_stage,engineering.quotation.stage.access,model_engineering_quotation_stage,base.group_user,1,1,1,1
-access_engineering_quotation_stage_history,engineering.quotation.stage.history.access,model_engineering_quotation_stage_history,base.group_user,1,1,1,1
+access_project_task_phase_user,project.task.phase.user,model_project_task_phase,base.group_user,1,1,1,1 that's it 
