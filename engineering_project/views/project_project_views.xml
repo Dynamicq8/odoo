@@ -124,7 +124,7 @@
                 هذا الكود السحري يجعل أي بطاقة لمهمة غير معينة للموظف الحالي 
                 باهتة قليلاً وتمنعه من الضغط عليها أو سحبها!
             -->
-            <xpath expr="//t[@t-name='kanban-box']/div" position="attributes">
+            <xpath expr="//t[@t-name='kanban-box']//div[1]" position="attributes">
                 <attribute name="t-attf-style">#{record.is_assigned_to_me.raw_value ? '' : 'pointer-events: none; opacity: 0.55;'}</attribute>
             </xpath>
             
