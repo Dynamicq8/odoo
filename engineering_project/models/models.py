@@ -112,20 +112,6 @@ WORKFLOW_TEMPLATES = {
         
         {'code': 'nra_5_1', 'name': '1- الإشراف على التنفيذ', 'stage': 'المرحلة الخامسة', 'role': 'structural_id'},
         {'code': 'nra_5_2', 'name': '3- إنهاء الإشراف', 'stage': 'المرحلة الخامسة', 'role': 'secretary_id'},
-    ],
-    
-    # 5. هــــدم (لجميع أنواع العقارات)
-    'demolition_all':[
-        {'code': 'demo_1_1', 'name': '1- تجميع المستندات والوثائق', 'stage': 'المرحلة الأولى', 'role': 'secretary_id'},
-        {'code': 'demo_1_2', 'name': '2- العقد وتحصيل الدفعة الأولى', 'stage': 'المرحلة الأولى', 'role': 'accountant_id'},
-        {'code': 'demo_1_3', 'name': '3- توقيع نماذج البلدية', 'stage': 'المرحلة الأولى', 'role': 'secretary_id'},
-        {'code': 'demo_1_4', 'name': '4- كتاب المواصفات وكتاب قطع تربة', 'stage': 'المرحلة الأولى', 'role': 'architect_id'},
-        
-        {'code': 'demo_2_1', 'name': '1- إرسال للبلدية', 'stage': 'المرحلة الثانية', 'role': 'secretary_id'},
-        {'code': 'demo_2_2', 'name': '2- اعتماد البلدية', 'stage': 'المرحلة الثانية', 'role': 'secretary_id'},
-        
-        {'code': 'demo_3_1', 'name': '1- الإشراف على الهدم', 'stage': 'المرحلة الثالثة', 'role': 'structural_id'},
-        {'code': 'demo_3_2', 'name': '2- إنهاء الإشراف', 'stage': 'المرحلة الثالثة', 'role': 'secretary_id'},
     ]
 }
 
@@ -373,6 +359,7 @@ class SaleOrder(models.Model):
         }
         project = self.env['project.project'].create(project_vals)
         
+        # إنشاء المراحل الخمس الأساسية لجميع أنواع المشاريع الجديدة
         stages_to_create =[
             'المرحلة الأولى', 
             'المرحلة الثانية', 
@@ -512,10 +499,6 @@ class ProjectProject(models.Model):
 
     def _get_workflow_key(self):
         self.ensure_one()
-        # إضافة مسار سير العمل الخاص بالهدم لكافة أنواع العقارات
-        if self.service_type == 'demolition':
-            return 'demolition_all'
-            
         is_addition = self.service_type in['addition', 'modification', 'addition_modification']
         if self.building_type == 'residential':
             return 'res_add' if is_addition else 'res_new'
@@ -547,6 +530,7 @@ class ProjectProject(models.Model):
         
         for i, step in enumerate(workflow):
             if step['code'] == completed_code:
+                # إنشاء المهمة التالية مباشرة في حال الانتهاء من الحالية
                 if i + 1 < len(workflow):
                     next_step = workflow[i + 1]
                     if next_step['code'] not in triggered:
@@ -562,21 +546,11 @@ class ProjectProject(models.Model):
         
         user_id = getattr(self, step_data['role']).id if hasattr(self, step_data['role']) and getattr(self, step_data['role']) else False
         
-        # حساب التسلسل (Sequence) للحفاظ على ترتيب ظهور المهام في Kanban 1 ثم 2 ثم 3 ..
-        sequence = 10
-        wf_key = self._get_workflow_key()
-        workflow = WORKFLOW_TEMPLATES.get(wf_key,[])
-        for i, step in enumerate(workflow):
-            if step['code'] == step_data['code']:
-                sequence = i + 1
-                break
-
         val = {
             'name': step_data['name'], 
             'project_id': self.id, 
             'stage_id': stage_id,
-            'workflow_step': step_data['code'],
-            'sequence': sequence, # سيتم الترتيب بناءً عليه
+            'workflow_step': step_data['code']
         }
         if user_id: 
             val['user_ids'] = [(4, user_id)]
@@ -590,26 +564,61 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    # تحويل الحقل إلى نص لجعله ديناميكياً ودعم كل رموز المهام الجديدة
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
 
-    # حقول نموذج مكونات المشروع الجديدة 
-    project_components_text = fields.Text(string="تفاصيل ومكونات المشروع")
-    project_components_completed = fields.Boolean(string="تم اكتمال المكونات", default=False)
+    phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
-    # حقل لضبط قابلية النقر على الكارت بناءً على التعين (مفيد جداً في كانبان)
-    is_current_user_assigned = fields.Boolean(compute='_compute_is_current_user_assigned')
-
-    def _compute_is_current_user_assigned(self):
+    def action_load_default_phases(self):
+        """ Loads the default checklist based on building type """
         for task in self:
-            # يمكن للمدير النظام وللموظف المعين فقط النقر على المهمة
-            if self.env.is_admin() or self.env.user.id in task.user_ids.ids:
-                task.is_current_user_assigned = True
-            else:
-                task.is_current_user_assigned = False
+            if task.phase_ids:
+                continue 
+
+            seq = 10
+            phases_data =[
+                ('مرحله الحفر', 'عام (General)'),
+                ('مرحله القواعد والشناجات', 'عام (General)'),
+                ('مرحله حوائط السرداب', 'السرداب (Basement)'),
+                ('مرحله صب سقف السرداب', 'السرداب (Basement)'),
+                ('مرحله اعمده الدور الارضى', 'الدور الأرضي (Ground)'),
+                ('مرحله صب سقف الدور الارضى', 'الدور الأرضي (Ground)'),
+                ('مرحله اعمده الدور الاول', 'الدور الأول (First)'),
+                ('مرحله صب سقف الدور الاول', 'الدور الأول (First)'),
+                ('مرحله اعمده الدور الثانى', 'الدور الثاني (Second)'),
+                ('مرحله صب سقف الدور الثانى', 'الدور الثاني (Second)'),
+                ('مرحله اعمده الدور السطح', 'السطح (Roof)'),
+                ('مرحله صب سقف السطح', 'السطح (Roof)'),
+            ]
+
+            phases_to_create =[]
+            for name, category in phases_data:
+                phases_to_create.append((0, 0, {
+                    'name': name,
+                    'floor_category': category,
+                    'sequence': seq
+                }))
+                seq += 10
+
+            task.write({'phase_ids': phases_to_create})
+
+    def get_completed_phases_grouped(self):
+        """ Helper method for the PDF Report to group checked items by floor """
+        self.ensure_one()
+        completed_phases = self.phase_ids.filtered(lambda p: p.is_completed)
+        
+        grouped = {}
+        for phase in completed_phases:
+            cat = phase.floor_category
+            if cat not in grouped:
+                grouped[cat] = []
+            grouped[cat].append(phase)
+        return grouped
 
     def write(self, vals):
         res = super(ProjectTask, self).write(vals)
-        if 'state' in vals and vals['state'] in['03_approved', '1_done']:
+        # إذا تم تحديث حالة المهمة لتصبح منجزة (قم بتعديل '1_done' أو '03_approved' لتطابق حالات سيستمك)
+        if 'state' in vals and vals['state'] in ['03_approved', '1_done']:
             for task in self:
                 if task.workflow_step and task.project_id:
                     task.project_id._trigger_next_workflow_step(task.workflow_step)
@@ -683,3 +692,14 @@ class KuwaitRegion(models.Model):
     _description = 'Kuwait Region'
     name = fields.Char(string='المنطقة', required=True)
     governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة", required=True)
+    
+class ProjectTaskPhase(models.Model):
+    _name = 'project.task.phase'
+    _description = 'Task Construction Phase Checklist'
+    _order = 'sequence, id'
+
+    task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
+    sequence = fields.Integer(string='التسلسل', default=10)
+    floor_category = fields.Char(string='الدور (Floor)', required=True)
+    name = fields.Char(string='المرحلة (Phase)', required=True)
+    is_completed = fields.Boolean(string='تم (Completed)', default=False)
