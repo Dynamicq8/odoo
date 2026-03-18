@@ -479,6 +479,7 @@ class ProjectProject(models.Model):
     block_no = fields.Char(string="القطعة")
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="المساحة (Area)")
+    electricity_receipt = fields.Char(string="ايصال تيار كهربا") # ADD THIS LINE
 
     architect_id = fields.Many2one('res.users', string="المهندس المعماري")
     accountant_id = fields.Many2one('res.users', string="المحاسبة")
