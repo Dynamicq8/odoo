@@ -5,6 +5,12 @@
         <field name="model">sign.template</field>
         <field name="inherit_id" ref="sign.sign_template_view_form"/>
         <field name="arch" type="xml">
+            <!-- Add a button to the header -->
+            <xpath expr="//header" position="inside">
+                <button name="my_button_action" type="object" string="My New Button" class="btn-primary"/>
+            </xpath>
+
+            <!-- Your existing code to add fields -->
             <xpath expr="//sheet" position="inside">
                 <group string="Engineering Commitment Settings (إعدادات التعهد الهندسي)">
                     <group>
