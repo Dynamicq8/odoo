@@ -142,7 +142,8 @@ class SaleOrder(models.Model):
     block_no = fields.Char(string="القطعة")
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="مساحة الارض")
-    
+    electricity_receipt = fields.Char(string="ايصال تيار كهربا") # ADD THIS LINE
+
     governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة")
     region_id = fields.Many2one('kuwait.region', string="المنطقة")
 
@@ -226,6 +227,8 @@ class SaleOrder(models.Model):
             'area': self.area,
             'governorate_id': self.governorate_id.id,
             'region_id': self.region_id.id,
+                    'electricity_receipt': self.electricity_receipt, # ADD THIS LINE
+
         }
         project = self.env['project.project'].create(project_vals)
 
