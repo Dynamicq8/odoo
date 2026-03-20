@@ -20,7 +20,9 @@ class SaleOrder(models.Model):
 
     @api.depends('engineering_package_id', 'engineering_package_id.feature_ids')
     def _compute_package_features_html(self):
-        """ Generates an HTML list of features for the selected package. """
+        """ Generates an HTML list of features for the selected package.
+            This version ONLY includes features marked as 'included'.
+        """
         for order in self:
             if not order.engineering_package_id or not order.engineering_package_id.feature_ids:
                 order.package_features_html = False
@@ -28,10 +30,9 @@ class SaleOrder(models.Model):
 
             res = '<ul style="list-style: none; padding: 0; margin: 0; text-align: right; direction: rtl;">'
             for feature in order.engineering_package_id.feature_ids:
+                # This is the corrected part: only add the feature if 'included' is True
                 if feature.included:
                     res += f'<li style="margin-bottom: 10px;"><span style="color: green; margin-left: 8px;">✔</span> {feature.name}</li>'
-                else:
-                    res += f'<li style="margin-bottom: 10px; color: #999;"><span style="color: red; margin-left: 8px;"></span> <s>{feature.name}</s></li>'
             res += '</ul>'
             order.package_features_html = res
 
