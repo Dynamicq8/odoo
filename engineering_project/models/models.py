@@ -359,7 +359,6 @@ class SaleOrder(models.Model):
         }
         project = self.env['project.project'].create(project_vals)
         
-        # إنشاء المراحل الخمس الأساسية لجميع أنواع المشاريع الجديدة
         stages_to_create =[
             'المرحلة الأولى', 
             'المرحلة الثانية', 
@@ -479,7 +478,7 @@ class ProjectProject(models.Model):
     block_no = fields.Char(string="القطعة")
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="المساحة (Area)")
-    electricity_receipt = fields.Char(string="ايصال تيار كهربا") # ADD THIS LINE
+    electricity_receipt = fields.Char(string="ايصال تيار كهربا") 
 
     architect_id = fields.Many2one('res.users', string="المهندس المعماري")
     accountant_id = fields.Many2one('res.users', string="المحاسبة")
@@ -516,11 +515,13 @@ class ProjectProject(models.Model):
         if not workflow:
             raise UserError(_("لا توجد خطة مهام مطابقة لنوع الخدمة والمبنى."))
             
-        first_step = workflow[0]
-        self._create_task_for_step(first_step)
+        # إنشاء كافة المهام دفعة واحدة، مع جعل المهمة الأولى فقط مفعلة
+        for index, step in enumerate(workflow):
+            is_first_task = (index == 0)
+            self._create_task_for_step(step, is_disabled=not is_first_task)
         
         self.workflow_started = True
-        self.triggered_steps = first_step['code'] + ","
+        self.triggered_steps = workflow[0]['code'] + ","
 
     def _trigger_next_workflow_step(self, completed_code):
         self.ensure_one()
@@ -531,15 +532,20 @@ class ProjectProject(models.Model):
         
         for i, step in enumerate(workflow):
             if step['code'] == completed_code:
-                # إنشاء المهمة التالية مباشرة في حال الانتهاء من الحالية
+                # بدل من الإنشاء، نقوم بالبحث عن المهمة التالية وفتح القفل عنها
                 if i + 1 < len(workflow):
                     next_step = workflow[i + 1]
                     if next_step['code'] not in triggered:
-                        self._create_task_for_step(next_step)
+                        next_task = self.env['project.task'].search([
+                            ('project_id', '=', self.id),
+                            ('workflow_step', '=', next_step['code'])
+                        ], limit=1)
+                        if next_task:
+                            next_task.is_disabled = False # فتح القفل
                         self.triggered_steps = triggered + next_step['code'] + ","
                 break
 
-    def _create_task_for_step(self, step_data):
+    def _create_task_for_step(self, step_data, is_disabled=False):
         stages_map = self._get_project_stages_map()
         stage_id = stages_map.get(step_data['stage'])
         if not stage_id: 
@@ -551,7 +557,8 @@ class ProjectProject(models.Model):
             'name': step_data['name'], 
             'project_id': self.id, 
             'stage_id': stage_id,
-            'workflow_step': step_data['code']
+            'workflow_step': step_data['code'],
+            'is_disabled': is_disabled, # تمرير حالة التعطيل هنا
         }
         if user_id: 
             val['user_ids'] = [(4, user_id)]
@@ -565,13 +572,14 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
-    # تحويل الحقل إلى نص لجعله ديناميكياً ودعم كل رموز المهام الجديدة
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
+    
+    # حقل جديد لمعرفة إن كانت المهمة مقفلة (بانتظار المهام السابقة) أم لا
+    is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
 
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def action_load_default_phases(self):
-        """ Loads the default checklist based on building type """
         for task in self:
             if task.phase_ids:
                 continue 
@@ -604,7 +612,6 @@ class ProjectTask(models.Model):
             task.write({'phase_ids': phases_to_create})
 
     def get_completed_phases_grouped(self):
-        """ Helper method for the PDF Report to group checked items by floor """
         self.ensure_one()
         completed_phases = self.phase_ids.filtered(lambda p: p.is_completed)
         
@@ -617,9 +624,16 @@ class ProjectTask(models.Model):
         return grouped
 
     def write(self, vals):
+        # منع نقل المهمة إلى حالة منجزة إذا كانت مقفلة
+        if 'state' in vals and vals['state'] in ['03_approved', '1_done', 'done']:
+            for task in self:
+                if task.is_disabled:
+                    raise UserError(_("لا يمكنك إنجاز هذه المهمة لأنها مقفلة! يرجى الانتهاء من المهام السابقة في سير العمل أولاً."))
+
         res = super(ProjectTask, self).write(vals)
-        # إذا تم تحديث حالة المهمة لتصبح منجزة (قم بتعديل '1_done' أو '03_approved' لتطابق حالات سيستمك)
-        if 'state' in vals and vals['state'] in ['03_approved', '1_done']:
+
+        # إذا تم تحديث حالة المهمة لتصبح منجزة
+        if 'state' in vals and vals['state'] in ['03_approved', '1_done', 'done']:
             for task in self:
                 if task.workflow_step and task.project_id:
                     task.project_id._trigger_next_workflow_step(task.workflow_step)
@@ -650,10 +664,10 @@ class ProjectTask(models.Model):
         
     @api.model
     def _send_periodic_task_reminders(self):
-        """ Runs every 10 hours """
         open_tasks = self.search([
             ('stage_id.fold', '=', False), 
-            ('user_ids', '!=', False)
+            ('user_ids', '!=', False),
+            ('is_disabled', '=', False) # تجاهل المهام المقفلة في التذكير
         ])
 
         user_task_counts = {}
@@ -704,4 +718,3 @@ class ProjectTaskPhase(models.Model):
     floor_category = fields.Char(string='الدور (Floor)', required=True)
     name = fields.Char(string='المرحلة (Phase)', required=True)
     is_completed = fields.Boolean(string='تم (Completed)', default=False)
-    
