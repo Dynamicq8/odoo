@@ -17,7 +17,7 @@ try:
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas as reportlab_canvas
 
-    # Path to font داخل الموديول
+    # Path to font inside your module
     font_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)),
         'static', 'src', 'fonts', 'Amiri-Regular.ttf'
@@ -37,7 +37,7 @@ except Exception as e:
 
 
 # ================================
-# 🔥 PATCH REPORTLAB DIRECTLY
+# 🔥 PATCH REPORTLAB DIRECTLY FOR RTL ARABIC
 # ================================
 if _ARABIC_ENABLED:
     try:
@@ -49,23 +49,29 @@ if _ARABIC_ENABLED:
             if not isinstance(text, str):
                 return text, False
 
+            # Detect Arabic letters
             is_arabic = any('\u0600' <= c <= '\u06FF' for c in text)
 
             if not is_arabic:
                 return text, False
 
+            # Reshape letters and reorder for RTL
             reshaped = arabic_reshaper.reshape(text)
             bidi_text = get_display(reshaped)
             return bidi_text, True
 
+        # Patch left-aligned drawString
         def drawString_patched(self, x, y, text, *args, **kwargs):
             text, is_arabic = _process_arabic_text(text)
 
             if is_arabic:
                 self.setFont('Amiri', self._fontsize or 12)
+                # Draw Arabic RTL text aligned to the right
+                return original_drawRightString(self, x, y, text, *args, **kwargs)
 
             return original_drawString(self, x, y, text, *args, **kwargs)
 
+        # Patch right-aligned drawRightString (just apply reshaping)
         def drawRightString_patched(self, x, y, text, *args, **kwargs):
             text, is_arabic = _process_arabic_text(text)
 
@@ -74,6 +80,7 @@ if _ARABIC_ENABLED:
 
             return original_drawRightString(self, x, y, text, *args, **kwargs)
 
+        # Patch centered text
         def drawCentredString_patched(self, x, y, text, *args, **kwargs):
             text, is_arabic = _process_arabic_text(text)
 
@@ -82,12 +89,12 @@ if _ARABIC_ENABLED:
 
             return original_drawCentredString(self, x, y, text, *args, **kwargs)
 
-        # Apply patch
+        # Apply the patches
         reportlab_canvas.Canvas.drawString = drawString_patched
         reportlab_canvas.Canvas.drawRightString = drawRightString_patched
         reportlab_canvas.Canvas.drawCentredString = drawCentredString_patched
 
-        _logger.info("Arabic Fix: ReportLab canvas patched successfully.")
+        _logger.info("Arabic Fix: ReportLab canvas patched successfully (RTL).")
 
     except Exception as e:
         _logger.error(f"Arabic Fix: Failed to patch canvas: {e}")
@@ -96,6 +103,6 @@ else:
     _logger.warning("Arabic Fix: Arabic support NOT enabled, skipping patch.")
 
 
-# Required dummy model (Odoo needs at least one model file)
+# Required dummy model for Odoo
 class SignRequestItem(models.Model):
     _inherit = 'sign.request.item'
