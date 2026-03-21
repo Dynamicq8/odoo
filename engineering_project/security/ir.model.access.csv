@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_project_task_phase_user,project.task.phase.user,model_project_task_phase,base.group_user,1,1,1,1
+access_engineering_task_commitment_user,Engineering Task Commitment User,model_engineering_task_commitment,base.group_user,1,1,1,0
