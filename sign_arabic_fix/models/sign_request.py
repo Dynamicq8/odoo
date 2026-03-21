@@ -7,7 +7,7 @@ from odoo.addons.sign.models.sign_request import SignRequestItemValue # Import t
 _logger = logging.getLogger(__name__)
 
 # Flag to indicate if Arabic support is fully enabled (libraries and font registered)
-ARABIC_SUPPORT = False
+_ARABIC_ENABLED = False
 
 try:
     import arabic_reshaper
@@ -15,70 +15,80 @@ try:
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     
-    ARABIC_SUPPORT = True
+    # Attempt to register the font
+    # Build the path to the font file inside our module's static directory
+    font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'src', 'fonts', 'Amiri-Regular.ttf')
+    
+    if os.path.exists(font_path):
+        pdfmetrics.registerFont(TTFont('Amiri', font_path))
+        _logger.info("Sign Arabic Fix: Successfully registered bundled Amiri font 'Amiri' with reportlab.")
+        _ARABIC_ENABLED = True
+    else:
+        _logger.error(f"Sign Arabic Fix: FATAL: Amiri font file not found at expected path: {font_path}. Arabic font support disabled.")
+        
 except ImportError:
-    _logger.warning("Could not import arabic_reshaper or python-bidi. Arabic text reshaping will not occur.")
+    _logger.warning("Sign Arabic Fix: Could not import arabic_reshaper, python-bidi, or reportlab components. Arabic text reshaping will not occur.")
+except Exception as e:
+    _logger.error(f"Sign Arabic Fix: FATAL: Error during font registration: {e}. Arabic font support disabled.")
 
-# --- Correctly load the bundled font and register it ---
-if ARABIC_SUPPORT: # Only attempt if Arabic libraries loaded
-    try:
-        # Build the path to the font file inside our module's static directory
-        font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'src', 'fonts', 'Amiri-Regular.ttf')
+
+# --- MONKEY PATCHING `_draw_text` METHOD on SignRequestItemValue ---
+# This is the most direct point where text is put onto the PDF.
+if _ARABIC_ENABLED and hasattr(SignRequestItemValue, '_draw_text'):
+    _logger.info("Sign Arabic Fix: Attempting to patch SignRequestItemValue._draw_text...")
+    original_draw_text = SignRequestItemValue._draw_text
+
+    def _draw_text_arabic_patched(self, canvas, pdf_location):
+        """
+        Overrides _draw_text to reshape Arabic text and ensure Amiri font is used.
+        """
+        value_to_process = self.value
         
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('Amiri', font_path))
-            _logger.info("Successfully registered bundled Amiri font 'Amiri' with reportlab.")
-        else:
-            _logger.error(f"FATAL: Amiri font file not found at expected path: {font_path}. Arabic font support disabled.")
-            ARABIC_SUPPORT = False # Disable if font file not found
+        if isinstance(value_to_process, str):
+            is_arabic = any('\u0600' <= char <= '\u06FF' for char in value_to_process)
             
-    except Exception as e:
-        _logger.error(f"FATAL: Could not register bundled Amiri font. Error: {e}. Arabic font support disabled.")
-        ARABIC_SUPPORT = False # Disable if font registration fails
-
-
-# --- MONKEY PATCHING `_get_resampled_value` (More Robust) ---
-
-# Check if _get_resampled_value exists on SignRequestItemValue before patching
-if hasattr(SignRequestItemValue, '_get_resampled_value'):
-    original_get_resampled_value = SignRequestItemValue._get_resampled_value
-
-    def _get_resampled_value_arabic(self):
-        """
-        Overrides _get_resampled_value to reshape Arabic text before it's rendered.
-        Also attempts to set the font_name dynamically if Arabic is detected.
-        """
-        # Get the value first using the original Odoo method
-        value = original_get_resampled_value(self)
-        
-        if ARABIC_SUPPORT and isinstance(value, str):
-            is_arabic = any('\u0600' <= char <= '\u06FF' for char in value)
             if is_arabic:
-                _logger.info(f"Reshaping Arabic value: '{value}' for Sign app.")
-                reshaped_text = arabic_reshaper.reshape(value)
+                _logger.info(f"Sign Arabic Fix: Arabic text detected in _draw_text: '{value_to_process}'")
+                
+                # Reshape the text for correct display
+                reshaped_text = arabic_reshaper.reshape(value_to_process)
                 bidi_text = get_display(reshaped_text)
-                _logger.info(f"Reshaped to: '{bidi_text}'")
                 
-                # IMPORTANT: Attempt to dynamically set font_name on the instance
-                # This is a softer approach than patching the property itself,
-                # as it won't crash the module if 'font_name' isn't a property.
-                if hasattr(self, 'font_name') and self.font_name != 'Amiri':
-                    self.font_name = 'Amiri'
-                    _logger.info(f"Dynamically set font_name to 'Amiri' for item with value '{value}'.")
+                # Store original font and size to restore them later
+                original_canvas_font_name = canvas._fontname
+                original_canvas_font_size = canvas._fontsize
+
+                # Force the canvas to use our registered Amiri font for this drawing operation
+                canvas.setFont('Amiri', self.font_size)
+                _logger.info(f"Sign Arabic Fix: Canvas font temporarily set to Amiri ({self.font_size}), text reshaped to: '{bidi_text}'")
                 
-                return bidi_text
+                # Odoo's original _draw_text method in SignRequestItemValue
+                # directly calls canvas.drawString(x, y, self.value).
+                # So, we must temporarily modify self.value before calling the original.
+                original_self_value = self.value
+                self.value = bidi_text # Assign reshaped text
+                
+                try:
+                    # Call the original method to draw the text, which will use the modified self.value
+                    original_draw_text(self, canvas, pdf_location)
+                finally:
+                    # Restore original values after drawing is complete
+                    self.value = original_self_value
+                    canvas.setFont(original_canvas_font_name, original_canvas_font_size)
+                    _logger.info("Sign Arabic Fix: Restored original self.value and canvas font after drawing.")
+                return # Drawing handled by our patch
         
-        return value
+        # If not Arabic, or no Arabic text detected, or _ARABIC_ENABLED is False, call the original method directly
+        return original_draw_text(self, canvas, pdf_location)
 
-    # Replace the original '_get_resampled_value' method with our new patched version
-    SignRequestItemValue._get_resampled_value = _get_resampled_value_arabic
-    _logger.info("Successfully patched SignRequestItemValue._get_resampled_value.")
+    SignRequestItemValue._draw_text = _draw_text_arabic_patched
+    _logger.info("Sign Arabic Fix: Successfully replaced SignRequestItemValue._draw_text with patched version.")
 else:
-    _logger.warning("SignRequestItemValue._get_resampled_value not found. Arabic text reshaping will not occur.")
+    _logger.warning("Sign Arabic Fix: SignRequestItemValue._draw_text not found or Arabic support not fully enabled. Arabic text fix will not be applied.")
 
 
-# We still need this empty class definition for the Odoo framework.
-# This ensures Odoo loads the file as a valid model extension.
+# This empty class definition is still necessary for Odoo to correctly load the file.
+# It acts as a valid model extension for the Odoo framework.
 class SignRequestItem(models.Model):
     _inherit = 'sign.request.item'
     pass
