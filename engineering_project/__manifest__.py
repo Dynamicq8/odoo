@@ -9,6 +9,8 @@
         'sale_management',
         'engineering_core',
         'sign', # <--- ADDED THIS!
+                'engineering_commitment', # <--- ADD THIS LINE! This is the fix for the current error.
+
     ],
     'data': [
         # Ensure views and data that define or use models are loaded first
