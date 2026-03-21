@@ -507,7 +507,7 @@ class ProjectProject(models.Model):
     workflow_started = fields.Boolean(default=False)
     triggered_steps = fields.Text(string="المهام المنفذة", default="")
     
-     commitment_ids = fields.Many2many('sale.order.line', string='Commitments', copy=False)
+    commitment_ids = fields.Many2many('sale.order.line', string='Commitments', copy=False)
 
     def _get_project_stages_map(self):
         self.ensure_one()
