@@ -9,7 +9,7 @@
         'sale_management',
         'engineering_core',
         'sign', # <--- ADDED THIS!
-                'engineering_commitment', # <--- ADD THIS LINE! This is the fix for the current error.
+                'engineering_commitments', # <--- ADD THIS LINE! This is the fix for the current error.
 
     ],
     'data': [
