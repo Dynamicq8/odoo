@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 {
     'name': "Engineering Project Enhancements",
     'summary': "Links projects to sales orders and manages engineering project workflows.",
@@ -8,18 +9,14 @@
         'project',
         'sale_management',
         'engineering_core',
-        'sign', # <--- ADDED THIS!
-                'engineering_commitments', # <--- ADD THIS LINE! This is the fix for the current error.
-
+        'sign',
     ],
     'data': [
-        # Ensure views and data that define or use models are loaded first
         'reports/initial_design_report.xml',
-        'views/project_project_views.xml', # This file contains the view for your new model
+        'views/project_project_views.xml',
         'data/project_task_type_data.xml',
         'data/cron.xml',
-        # Move security file to the very end
-        'security/ir.model.access.csv', # <--- MOVED THIS TO THE END
+        'security/ir.model.access.csv',
     ],
     'assets': {
         'web.assets_backend': [
