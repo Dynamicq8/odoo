@@ -441,24 +441,28 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    # 1. هذا السطر يقوم بإزالة خيار 'Done' من القائمة المنسدلة نهائياً
+    state = fields.Selection(selection_add=[('1_done', None)])
+
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
-    is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False) # الحقل الجديد المطلوب للإغلاق
+    is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def write(self, vals):
-        # منع نقل المهمة إذا كانت مقفلة
-        if 'stage_id' in vals:
+        # 2. منع تغيير الحالة (Approved/In Progress) أو نقل المرحلة إذا كانت مقفلة
+        if 'stage_id' in vals or 'state' in vals:
             for task in self:
                 if task.is_disabled:
                     raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
 
         res = super(ProjectTask, self).write(vals)
-        done_stage_id = self.env.ref('project.project_stage_3', raise_if_not_found=False)
         
-        if 'stage_id' in vals and done_stage_id and vals['stage_id'] == done_stage_id.id:
+        # 3. السحر هنا: بمجرد أن يختار الموظف "Approved" من القائمة المنسدلة، تفتح المهمة التالية!
+        if vals.get('state') == '03_approved':
             for task in self:
                 if task.workflow_step and task.project_id:
                     task.project_id._trigger_next_workflow_step(task.workflow_step)
+                    
         return res
 
     def action_view_parent_project(self):
