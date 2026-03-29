@@ -16,7 +16,6 @@
         'views/project_project_views.xml',
         'data/project_task_type_data.xml',
         'data/cron.xml',
-            'views/assets.xml',
 
         'security/ir.model.access.csv',
 
