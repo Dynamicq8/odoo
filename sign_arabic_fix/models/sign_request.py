@@ -8,6 +8,14 @@ _logger = logging.getLogger(__name__)
 
 _ARABIC_ENABLED = False
 
+# ==========================================
+# ⚙️ THE MAGIC TOGGLE
+# If the text is backwards, change this to True. 
+# If it is forwards, leave it False.
+# ==========================================
+FLIP_TEXT = False 
+
+
 try:
     import arabic_reshaper
     from reportlab.pdfbase import pdfmetrics
@@ -59,20 +67,24 @@ if _ARABIC_ENABLED:
             # 1. Clean hidden formatting characters
             clean_text = text.replace('\u200e', '').replace('\u200f', '').replace('\u202a', '').replace('\u202b', '').replace('\u202c', '')
 
-            # 2. Reshape (connect the letters)
+            # 2. Reshape (connect the letters physically)
             reshaped = reshaper.reshape(clean_text)
             
-            # 3. 🔥 MANUALLY FLIP THE STRING 🔥 (Replaces Bidi)
-            # This takes the string and reverses the order of the characters
-            flipped_text = reshaped[::-1]
+            # 3. Apply the Magic Toggle
+            if FLIP_TEXT:
+                final_text = reshaped[::-1]
+                flip_status = "FLIPPED"
+            else:
+                final_text = reshaped
+                flip_status = "NOT FLIPPED"
             
-            return flipped_text, True
+            return final_text, True, flip_status
 
         # Patch left-aligned
         def drawString_patched(self, x, y, text, *args, **kwargs):
-            text_to_draw, is_arabic = _process_arabic_text(text)
+            text_to_draw, is_arabic, status = _process_arabic_text(text)
             if is_arabic:
-                _logger.warning(f"🚀 STAMPING ARABIC: Original='{text}' -> Flipped='{text_to_draw}'")
+                _logger.warning(f"🚀 STAMPING ARABIC ({status}): Original='{text}' -> Final='{text_to_draw}'")
                 current_size = getattr(self, '_fontsize', 12) or 12
                 self.setFont('ArabicFont', current_size)
                 return original_drawString(self, x, y, text_to_draw, *args, **kwargs)
@@ -80,9 +92,9 @@ if _ARABIC_ENABLED:
 
         # Patch right-aligned
         def drawRightString_patched(self, x, y, text, *args, **kwargs):
-            text_to_draw, is_arabic = _process_arabic_text(text)
+            text_to_draw, is_arabic, status = _process_arabic_text(text)
             if is_arabic:
-                _logger.warning(f"🚀 STAMPING ARABIC: Original='{text}' -> Flipped='{text_to_draw}'")
+                _logger.warning(f"🚀 STAMPING ARABIC ({status}): Original='{text}' -> Final='{text_to_draw}'")
                 current_size = getattr(self, '_fontsize', 12) or 12
                 self.setFont('ArabicFont', current_size)
                 return original_drawRightString(self, x, y, text_to_draw, *args, **kwargs)
@@ -90,9 +102,9 @@ if _ARABIC_ENABLED:
 
         # Patch centered text
         def drawCentredString_patched(self, x, y, text, *args, **kwargs):
-            text_to_draw, is_arabic = _process_arabic_text(text)
+            text_to_draw, is_arabic, status = _process_arabic_text(text)
             if is_arabic:
-                _logger.warning(f"🚀 STAMPING ARABIC: Original='{text}' -> Flipped='{text_to_draw}'")
+                _logger.warning(f"🚀 STAMPING ARABIC ({status}): Original='{text}' -> Final='{text_to_draw}'")
                 current_size = getattr(self, '_fontsize', 12) or 12
                 self.setFont('ArabicFont', current_size)
                 return original_drawCentredString(self, x, y, text_to_draw, *args, **kwargs)
@@ -103,7 +115,11 @@ if _ARABIC_ENABLED:
         reportlab_canvas.Canvas.drawRightString = drawRightString_patched
         reportlab_canvas.Canvas.drawCentredString = drawCentredString_patched
 
-        _logger.warning("✅ ARABIC FIX: ReportLab canvas patched successfully with MANUAL FLIP.")
+        _logger.warning("✅ ARABIC FIX: ReportLab canvas patched successfully.")
 
     except Exception as e:
         _logger.error(f"❌ ARABIC FIX ERROR: Failed to patch canvas: {e}")
+
+# Required dummy model for Odoo
+class SignRequestItem(models.Model):
+    _inherit = 'sign.request.item'
