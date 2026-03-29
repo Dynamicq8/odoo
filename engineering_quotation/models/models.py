@@ -142,7 +142,7 @@ class SaleOrder(models.Model):
     block_no = fields.Char(string="القطعة")
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="مساحة الارض")
-    electricity_receipt = fields.Char(string="ايصال تيار كهربا") # ADD THIS LINE
+    electricity_receipt = fields.Char(string="ايصال تيار كهربا")
 
     governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة")
     region_id = fields.Many2one('kuwait.region', string="المنطقة")
@@ -227,7 +227,7 @@ class SaleOrder(models.Model):
             'area': self.area,
             'governorate_id': self.governorate_id.id,
             'region_id': self.region_id.id,
-            'electricity_receipt': self.electricity_receipt, # تمرير القيمة للمشروع
+            'electricity_receipt': self.electricity_receipt, 
 
         }
         project = self.env['project.project'].create(project_vals)
@@ -352,11 +352,9 @@ class ProjectProject(models.Model):
 
     def _get_workflow_key(self):
         self.ensure_one()
-        # 1. Check for Demolition First
         if self.service_type == 'demolition':
             return 'demolition'
             
-        # 2. Check for Others
         is_addition = self.service_type in ['addition', 'modification', 'addition_modification']
         if self.building_type == 'residential':
             return 'res_add' if is_addition else 'res_new'
@@ -373,11 +371,14 @@ class ProjectProject(models.Model):
         if not workflow:
             raise UserError(_("لا توجد خطة مهام مطابقة لنوع الخدمة والمبنى."))
 
-        first_step = workflow[0]
-        self._create_task_for_step(first_step)
+        # 1. التعديل الأهم هنا: نقوم بإنشاء جميع المهام، ونقفل كل المهام عدا المهمة الأولى
+        for index, step in enumerate(workflow):
+            is_locked = (index != 0) # الأولى False، والباقي True
+            self._create_task_for_step(step, is_disabled=is_locked)
 
         self.workflow_started = True
-        self.triggered_steps = first_step['code'] + ","
+        if workflow:
+            self.triggered_steps = workflow[0]['code'] + ","
 
     def _trigger_next_workflow_step(self, completed_code):
         self.ensure_one()
@@ -391,17 +392,23 @@ class ProjectProject(models.Model):
                 if i + 1 < len(workflow):
                     next_step = workflow[i + 1]
                     if next_step['code'] not in triggered:
-                        self._create_task_for_step(next_step)
+                        # 2. التعديل الثاني هنا: بدلاً من إنشاء مهمة جديدة، نبحث عن المهمة المقفلة ونفتحها
+                        next_task = self.env['project.task'].search([
+                            ('project_id', '=', self.id),
+                            ('workflow_step', '=', next_step['code'])
+                        ], limit=1)
+                        if next_task:
+                            next_task.is_disabled = False
+                        
                         self.triggered_steps = triggered + next_step['code'] + ","
                 break
 
-    def _create_task_for_step(self, step_data):
+    def _create_task_for_step(self, step_data, is_disabled=False):
         stages_map = self._get_project_stages_map()
         stage_id = stages_map.get(step_data['stage'])
         if not stage_id:
             return
 
-        # --- FIX: Calculate task Sequence to force 1, 2, 3, 4 sorting from Top to Bottom ---
         wf_key = self._get_workflow_key()
         workflow = WORKFLOW_TEMPLATES.get(wf_key, [])
         tasks_in_current_stage =[t for t in workflow if t['stage'] == step_data['stage']]
@@ -409,9 +416,8 @@ class ProjectProject(models.Model):
         task_sequence = 10
         for index, t in enumerate(tasks_in_current_stage):
             if t['code'] == step_data['code']:
-                task_sequence = index + 1 # gives sequence 1, 2, 3, 4 to keep order correct.
+                task_sequence = index + 1
                 break
-        # ----------------------------------------------------------------------------------
 
         user_id = getattr(self, step_data['role']).id if hasattr(self, step_data['role']) and getattr(self, step_data['role']) else False
 
@@ -420,7 +426,8 @@ class ProjectProject(models.Model):
             'project_id': self.id,
             'stage_id': stage_id,
             'workflow_step': step_data['code'],
-            'sequence': task_sequence # This forces Odoo Kanban to place 1 at the top
+            'sequence': task_sequence,
+            'is_disabled': is_disabled # إرسال حالة القفل أثناء الإنشاء
         }
         if user_id:
             val['user_ids'] = [(4, user_id)]
@@ -435,9 +442,16 @@ class ProjectTask(models.Model):
     _inherit = 'project.task'
 
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
+    is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False) # الحقل الجديد المطلوب للإغلاق
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def write(self, vals):
+        # منع نقل المهمة إذا كانت مقفلة
+        if 'stage_id' in vals:
+            for task in self:
+                if task.is_disabled:
+                    raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
+
         res = super(ProjectTask, self).write(vals)
         done_stage_id = self.env.ref('project.project_stage_3', raise_if_not_found=False)
         
