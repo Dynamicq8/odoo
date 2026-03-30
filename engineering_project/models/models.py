@@ -624,9 +624,34 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    # --- RULE 2: Task Status Modification ---
+    state = fields.Selection(
+        selection=[
+            ('01_in_progress', 'In Progress'),
+            ('02_changes_requested', 'Change Requested'),
+            ('03_approved', 'Approved'),
+        ],
+        string='Status',
+        default='01_in_progress',
+        tracking=True,
+        copy=False,
+    )
+
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
     is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
+
+    # --- RULE 1: Computed visibility variables and related fields ---
+    commitment_ids = fields.Many2many('sale.order.line', related='project_id.commitment_ids', readonly=False, string='Commitments')
+    is_architectural_task = fields.Boolean(compute='_compute_task_visibility')
+    is_doc_task = fields.Boolean(compute='_compute_task_visibility')
+
+    @api.depends('name')
+    def _compute_task_visibility(self):
+        for task in self:
+            name = task.name or ''
+            task.is_architectural_task = bool(any(kw in name for kw in ['معماري', 'كروكي', 'فرش', 'واجهات', 'تصميم معماري']))
+            task.is_doc_task = bool(any(kw in name for kw in ['تجميع المستندات', 'تجهيز النماذج', 'تعهد']))
 
     # --- NEW SKETCH-RELATED FIELDS ADDED HERE ---
     sketch_ids = fields.One2many('project.task.sketch', 'task_id', string="Sketches")
@@ -645,6 +670,44 @@ class ProjectTask(models.Model):
         'attachment_id', 
         string="اثباتات (Attachments)"
     )
+
+    # --- RULES 3 & 4: Subtasks Auto-Creation ---
+    @api.model_create_multi
+    def create(self, vals_list):
+        tasks = super(ProjectTask, self).create(vals_list)
+        for task in tasks:
+            name = task.name or ''
+            project = task.project_id
+
+            # Rule 3: فحص التربة كتاب الكهرباء
+            if 'فحص التربة' in name and 'الكهرباء' in name:
+                secretary_id = project.secretary_id.id if project and project.secretary_id else False
+                st_names = [
+                    'فحص التربة تم الإرسال',
+                    'فحص التربة تم الإنشاء',
+                    'الكهرباء تم الإرسال',
+                    'الكهرباء تم الاعتماد'
+                ]
+                for i, st in enumerate(st_names):
+                    self.env['project.task'].create({
+                        'name': st,
+                        'project_id': project.id if project else False,
+                        'parent_id': task.id,
+                        'user_ids': [(4, secretary_id)] if secretary_id else [],
+                        'sequence': i + 1,
+                    })
+
+            # Rule 4: تجميع المستندات (Residential)
+            if 'تجميع المستندات' in name and project and project.building_type == 'residential':
+                st_names = ['الوثيقة', 'المدنية', 'الموقع العام']
+                for i, st in enumerate(st_names):
+                    self.env['project.task'].create({
+                        'name': st,
+                        'project_id': project.id,
+                        'parent_id': task.id,
+                        'sequence': i + 1,
+                    })
+        return tasks
 
     def action_load_default_phases(self):
         self.ensure_one() 
@@ -696,7 +759,7 @@ class ProjectTask(models.Model):
 
     def write(self, vals):
         # 1. منع التحديث إذا كانت المهمة مقفلة 
-        if 'stage_id' in vals or vals.get('state') in ['1_done', '03_approved']:
+        if 'stage_id' in vals or vals.get('state') == '03_approved':
             for task in self:
                 if task.is_disabled:
                     raise UserError(_("لا يمكنك إنجاز هذه المهمة أو تغيير حالتها لأنها مقفلة! يرجى الانتهاء من المهام السابقة أولاً."))
@@ -707,8 +770,8 @@ class ProjectTask(models.Model):
         for task in self:
             is_done = False
             
-            # في أودو 16 وما فوق: تقييم حالة Task عبر الحقل (state)
-            if vals.get('state') in ['1_done', '03_approved']:
+            # تقييم حالة Task عبر الحقل (state) - تم التعديل لاستهداف 03_approved حصراً
+            if vals.get('state') == '03_approved':
                 is_done = True
                 
             # التقييم بناءً على تغيير المرحلة (Stage)
@@ -768,6 +831,7 @@ class ProjectTask(models.Model):
             'res_id': new_sketch.id,
             'target': 'new',
         }
+        
     @api.model
     def _send_periodic_task_reminders(self):
         open_tasks = self.search([
@@ -814,7 +878,6 @@ class ProjectTaskSketch(models.Model):
     created_by_id = fields.Many2one('res.users', string='Created By', default=lambda self: self.env.user, readonly=True)
     create_date = fields.Datetime(string='Creation Date', readonly=True)
 
-    # 👇 ADD THIS METHOD 👇
     def action_open_sketch_editor(self):
         self.ensure_one()
         return {
@@ -823,7 +886,7 @@ class ProjectTaskSketch(models.Model):
             'res_model': 'project.task.sketch',
             'view_mode': 'form',
             'res_id': self.id,
-            'target': 'new', # Opens as a popup dialog
+            'target': 'new', 
         }
 
 # ==============================================================================
@@ -834,7 +897,6 @@ class IrAttachment(models.Model):
 
     def action_send_attachment_whatsapp(self):
         self.ensure_one()
-        # Find the related task
         task = self.env['project.task'].search([
             ('proof_attachment_ids', 'in', self.ids)
         ], limit=1)
@@ -850,7 +912,6 @@ class IrAttachment(models.Model):
         if not phone: 
             raise UserError(_("لا يوجد رقم هاتف للعميل: %s") % partner.name)
 
-        # Generate a public URL for the attachment
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         download_url = f"{base_url}/web/content/{self.id}?download=true"
         
@@ -888,7 +949,5 @@ class ProjectTaskPhase(models.Model):
     sequence = fields.Integer(string='التسلسل', default=10)
     floor_category = fields.Char(string='الدور (Floor)', required=True)
     
-    # *** CHANGE THIS LINE ***
     name = fields.Text(string='المرحلة (Phase)', required=True) 
-    
     is_completed = fields.Boolean(string='تم (Completed)', default=False)

@@ -89,6 +89,12 @@
                     يرجى الانتهاء من المهام السابقة في سير العمل حتى يتم تفعيل هذه المهمة تلقائياً.
                 </div>
             </xpath>
+            
+            <!-- حقول الشروط لإخفاء وإظهار التبويبات -->
+            <xpath expr="//notebook" position="before">
+                <field name="is_architectural_task" invisible="1"/>
+                <field name="is_doc_task" invisible="1"/>
+            </xpath>
 
             <xpath expr="//notebook" position="inside">
                 <page string="نموذج مكونات المشروع" name="project_details_form">
@@ -115,8 +121,19 @@
                     </field>
                 </page>
 
-                <!-- ================== NEW TAB 1: SKETCHES (One2Many) ================== -->
-                <page string="رسومات كروكي (Sketches)" name="sketches">
+                <!-- ================== NEW TAB 1: COMMITMENTS (التعهدات) ================== -->
+                <page string="التعهدات (Commitments)" name="commitments" invisible="not is_doc_task">
+                    <field name="commitment_ids" readonly="is_disabled">
+                        <tree editable="bottom">
+                            <field name="name" string="التعهد"/>
+                            <field name="product_uom_qty" string="الكمية"/>
+                            <field name="price_unit" string="السعر"/>
+                        </tree>
+                    </field>
+                </page>
+
+                <!-- ================== NEW TAB 2: SKETCHES (One2Many) ================== -->
+                <page string="رسومات كروكي (Sketches)" name="sketches" invisible="not is_architectural_task">
                     <field name="sketch_ids" nolabel="1" readonly="is_disabled">
                         <tree>
                             <field name="name"/>
@@ -132,7 +149,6 @@
                                     <field name="create_date" readonly="1"/>
                                 </group>
                                 <separator string="Sketch Pad"/>
-                                <!-- The new sketch_pad widget points to the sketch_image field of the current sketch record -->
                                 <field name="sketch_image" widget="sketch_pad_editor" style="width: 100%; height: 500px;"/>
                             </sheet>
                         </form>
@@ -141,12 +157,12 @@
                     <field name="sketch_count" invisible="1"/>
                 </page>
 
-                <!-- ================== NEW TAB 2: ATTACHMENTS ================= -->
-                <page string="مرفقات" name="proofs_attachments">
+                <!-- ================== NEW TAB 3: ATTACHMENTS ================= -->
+                <!-- مرئي في كل المهام بدون استثناء (لا يحتوي على invisible condition) -->
+                <page string="المرفقات (Attachments)" name="proofs_attachments">
                     <p class="text-muted">
                         قم برفع صور، ملفات PDF، أو أي مستندات أخرى كإثباتات للمهمة. (اضغط على إضافة سطر للرفع)
                     </p>
-                    <!-- تم دمج الحقل ليكون عبارة عن جدول يعرض الملفات ويحتوي على زر الواتساب -->
                     <field name="proof_attachment_ids" nolabel="1">
                          <tree editable="bottom">
                             <field name="name" string="اسم الملف"/>
