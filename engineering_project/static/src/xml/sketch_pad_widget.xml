@@ -4,6 +4,7 @@
     <t t-name="engineering_project.SketchPadWidget" owl="1">
         <div class="o_field_sketch_pad_container" t-att-class="{ 'o_field_empty': !props.value, 'o_field_widget': true }">
             <div class="sketch-controls bg-light p-2 mb-2 d-flex flex-wrap align-items-center justify-content-center">
+                <!-- Controls remain completely unchanged -->
                 <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
                     <button type="button" class="btn btn-outline-primary btn-sm me-2" t-att-class="{ 'active': currentMode.mode === 'pen' }" t-on-click="setPenMode">
                         <i class="fa fa-pencil"/> Pen
@@ -35,7 +36,11 @@
                     </button>
                 </div>
             </div>
-            <canvas t-ref="canvas" class="border border-dark bg-white"/>
+            
+            <!-- FIX 3: Replaced <canvas> with a container div. 
+                 OWL will manage this outer div, while Fabric.js manages the canvas inside it -->
+            <div t-ref="canvasContainer" class="border border-dark bg-white w-100"></div>
+            
         </div>
     </t>
 
