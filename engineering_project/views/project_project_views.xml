@@ -22,7 +22,8 @@
                 <field name="sale_order_id" readonly="1"/>
                 
                 <field name="workflow_started" invisible="1"/>
-                <field name="triggered_steps" invisible="1"/>
+                <!-- REMOVED THE FOLLOWING LINE THAT CAUSED THE ERROR -->
+                <!-- <field name="triggered_steps" invisible="1"/> -->
                 
                 <group string="فريق العمل (Project Team)">
                     <group>
