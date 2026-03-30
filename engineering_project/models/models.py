@@ -3,9 +3,6 @@ from odoo import models, fields, api, _, http
 from odoo.exceptions import UserError, ValidationError
 import datetime
 import urllib.parse
-import base64
-import io
-from PIL import Image
 
 # ==============================================================================
 #  WORKFLOW TEMPLATES (خرائط سير العمل)
@@ -325,13 +322,10 @@ class SaleOrder(models.Model):
             })
             self.write({'quotation_stage_id': next_stage.id})
             
-            # --- FIX: Auto Create Project and Start Workflow on Approval ---
             if next_stage.is_approved_stage:
-                # 1. إنشاء المشروع تلقائياً إذا لم يتم إنشاؤه مسبقاً
                 if not self.project_id:
                     self._create_engineering_project()
                 
-                # 2. تفعيل سير العمل (إنشاء المهام) إذا لم يبدأ
                 if self.project_id and not self.project_id.workflow_started:
                     self.project_id.action_start_workflow()
                 
@@ -354,7 +348,6 @@ class SaleOrder(models.Model):
 
     def _create_engineering_project(self):
         self.ensure_one()
-        # --- FIX: Safe getattr to prevent errors if these fields aren't in SaleOrder yet ---
         gov_id = getattr(self, 'governorate_id', False)
         reg_id = getattr(self, 'region_id', False)
         elec = getattr(self, 'electricity_receipt', False)
@@ -374,10 +367,7 @@ class SaleOrder(models.Model):
             'electricity_receipt': elec,
         }
         project = self.env['project.project'].create(project_vals)
-        
-        # --- FIX: Create or link stages securely ---
         project._get_project_stages_map()
-            
         self.write({'project_id': project.id})
         return project
 
@@ -503,7 +493,6 @@ class ProjectProject(models.Model):
         stages = self.env['project.task.type'].search([('project_ids', 'in', self.id)], order='sequence')
         stage_map = {stage.name: stage.id for stage in stages}
         
-        # --- FIX: Ensure stages explicitly exist to prevent silent bugs during task creation ---
         required_stages = [
             'المرحلة الأولى', 
             'المرحلة الثانية', 
@@ -549,11 +538,9 @@ class ProjectProject(models.Model):
         if not workflow:
             raise UserError(_("لا توجد خطة مهام مطابقة لنوع الخدمة والمبنى."))
 
-        # التأكد من وجود المراحل (Stages) قبل إنشاء المهام
         self._get_project_stages_map()
 
         for index, step in enumerate(workflow):
-            # فقط أول مهمة تكون مفعلة (غير مقفلة)، والباقي يتم قفله
             is_disabled_task = (index != 0)
             self._create_task_for_step(step, is_disabled=is_disabled_task)
 
@@ -561,18 +548,22 @@ class ProjectProject(models.Model):
         if workflow:
             self.triggered_steps = workflow[0]['code'] + "," 
 
-    # THIS IS THE METHOD THE TRACEBACK REFERS TO. 
-    # Its definition (self, completed_code) is correct as per your provided code.
-    # The error implies your deployed code for this method is missing 'completed_code'.
-    def _trigger_next_workflow_step(self, completed_code): # <--- THIS DEFINITION IS CRUCIAL
+    # --- THIS SIGNATURE IS UPDATED WITH **KWARGS TO BE FULLY BUG-PROOF ---
+    def _trigger_next_workflow_step(self, completed_code=False, **kwargs):
         self.ensure_one()
+        
+        # Fallback if old python expects `task.project_id._trigger_next_workflow_step(completed_code=task.workflow_step)`
+        code_to_process = kwargs.get('completed_code', completed_code)
+        if not code_to_process:
+            return
+            
         wf_key = self._get_workflow_key()
         workflow = WORKFLOW_TEMPLATES.get(wf_key, [])
 
         triggered_steps_list = (self.triggered_steps or "").split(',')
         
         for i, step in enumerate(workflow):
-            if step['code'] == completed_code:
+            if step['code'] == code_to_process:
                 if i + 1 < len(workflow):
                     next_step = workflow[i + 1]
                     if next_step['code'] not in triggered_steps_list:
@@ -582,7 +573,6 @@ class ProjectProject(models.Model):
                         ], limit=1)
                         
                         if next_task:
-                            # فتح المهمة التالية لتمكين النقر عليها
                             next_task.is_disabled = False
                             self.triggered_steps = (self.triggered_steps or "") + next_step['code'] + ","
                 break
@@ -603,7 +593,6 @@ class ProjectProject(models.Model):
                 task_sequence = index + 1 
                 break
 
-        # --- FIX: Safe attribute handling for roles ---
         user_record = getattr(self, step_data['role'], False)
         user_id = user_record.id if user_record else False
         
@@ -620,29 +609,23 @@ class ProjectProject(models.Model):
             
         new_task = self.env['project.task'].create(val)
 
-        # =========================================================
-        # 🔥 CREATING AUTOMATIC SUBTASKS FOR SPECIFIC TASKS 🔥
-        # =========================================================
-        # 1. تجميع المستندات
         if "تجميع المستندات" in step_data['name']:
             for sub_name in ["الوثيقه", "المدنيه", "الموقع العام"]:
                 self.env['project.task'].create({
                     'name': sub_name,
                     'project_id': self.id,
                     'parent_id': new_task.id,
-                    'stage_id': stage_id,  # 👈 هذا السطر هو الأهم لكي تظهر المهمة
-
+                    'stage_id': stage_id, 
                     'is_disabled': is_disabled,
                 })
 
-        # 2. فحص التربة - كتاب الكهرباء
         if "فحص التربة" in step_data['name'] and "الكهرباء" in step_data['name']:
             for sub_name in ["فحص التربه تم الأرسال", "فحص التربه تم الأعتماد", "الكهرباء تم الأرسال", "الكهرباء تم الأعتماد"]:
                 self.env['project.task'].create({
                     'name': sub_name,
                     'project_id': self.id,
                     'parent_id': new_task.id,
-                    'stage_id': stage_id,  # 👈 هذا السطر هو الأهم لكي تظهر المهمة
+                    'stage_id': stage_id,
                     'is_disabled': is_disabled,
                 })
 
@@ -657,13 +640,9 @@ class ProjectTask(models.Model):
     is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
-    # --- NEW SKETCH-RELATED FIELDS ADDED HERE ---
     sketch_ids = fields.One2many('project.task.sketch', 'task_id', string="Sketches")
     sketch_count = fields.Integer(compute='_compute_sketch_count', string="Number of Sketches")
 
-    # ==================================================================================
-    # NEW FIELDS TO CONTROL TAB VISIBILITY BASED ON TASK TYPE (PAPERWORK VS ENGINEERING)
-    # ==================================================================================
     is_paperwork_task = fields.Boolean(string="Is Paperwork Task", compute="_compute_task_category", store=False)
     is_engineering_task = fields.Boolean(string="Is Engineering Task", compute="_compute_task_category", store=False)
 
@@ -683,7 +662,6 @@ class ProjectTask(models.Model):
                     if role:
                         break
                 
-                # Check mapping
                 if role in ['secretary_id', 'accountant_id']:
                     is_paper = True
                 elif role in ['structural_id', 'facade_draftsman_id', 'muni_draftsman_id', 'architect_id', 'electrical_id', 'draftsman_id']:
@@ -692,7 +670,6 @@ class ProjectTask(models.Model):
                     is_paper = True
                     is_eng = True
             else:
-                # If it's a manual task without a workflow_step, show everything
                 is_paper = True
                 is_eng = True
             
@@ -703,11 +680,10 @@ class ProjectTask(models.Model):
     def _compute_sketch_count(self):
         for task in self:
             task.sketch_count = len(task.sketch_ids)
-    # --- END OF NEW SKETCH-RELATED FIELDS ---
 
     proof_attachment_ids = fields.Many2many(
         'ir.attachment',
-        'project_task_ir_attachments_rel', # Explicit join table name
+        'project_task_ir_attachments_rel', 
         'task_id', 
         'attachment_id', 
         string="اثباتات (Attachments)"
@@ -762,7 +738,6 @@ class ProjectTask(models.Model):
         return grouped
 
     def write(self, vals):
-        # 1. منع التحديث إذا كانت المهمة مقفلة 
         if 'stage_id' in vals or vals.get('state') in ['1_done', '03_approved']:
             for task in self:
                 if task.is_disabled:
@@ -770,30 +745,24 @@ class ProjectTask(models.Model):
 
         res = super(ProjectTask, self).write(vals)
 
-        # 2. تفعيل المهمة التالية إذا تحولت المهمة الحالية إلى منجزة
         for task in self:
             is_done = False
             
-            # في أودو 16 وما فوق: تقييم حالة Task عبر الحقل (state)
             if vals.get('state') in ['1_done', '03_approved']:
                 is_done = True
                 
-            # التقييم بناءً على تغيير المرحلة (Stage)
             elif 'stage_id' in vals:
                 stage = self.env['project.task.type'].browse(vals['stage_id'])
                 if stage.fold or stage.is_closed or 'done' in (stage.name or '').lower() or 'منجز' in (stage.name or ''):
                     is_done = True
                 else:
-                    # فحص توافقي كحل احتياطي
                     done_stage = self.env.ref('project.project_stage_3', raise_if_not_found=False)
                     if done_stage and stage.id == done_stage.id:
                         is_done = True
 
             if is_done and task.workflow_step and task.project_id:
-                # This is the line where the error occurred in your traceback.
-                # The definition of _trigger_next_workflow_step(self, completed_code)
-                # must match the call (which it does in your provided code).
-                task.project_id._trigger_next_workflow_step(task.workflow_step)
+                # --- THIS CALL IS NOW BULLETPROOF BY PASSING AS KEYWORD ARGUMENT ---
+                task.project_id._trigger_next_workflow_step(completed_code=task.workflow_step)
                 
         return res
 
@@ -825,11 +794,9 @@ class ProjectTask(models.Model):
         
     def action_create_new_sketch(self):
         self.ensure_one()
-        # Create an empty sketch record automatically
         new_sketch = self.env['project.task.sketch'].create({
             'task_id': self.id,
         })
-        # Open it in the popup editor
         return {
             'name': _('Sketch Editor'),
             'type': 'ir.actions.act_window',
@@ -838,6 +805,7 @@ class ProjectTask(models.Model):
             'res_id': new_sketch.id,
             'target': 'new',
         }
+        
     @api.model
     def _send_periodic_task_reminders(self):
         open_tasks = self.search([
@@ -884,7 +852,6 @@ class ProjectTaskSketch(models.Model):
     created_by_id = fields.Many2one('res.users', string='Created By', default=lambda self: self.env.user, readonly=True)
     create_date = fields.Datetime(string='Creation Date', readonly=True)
 
-    # 👇 ADD THIS METHOD 👇
     def action_open_sketch_editor(self):
         self.ensure_one()
         return {
@@ -893,18 +860,17 @@ class ProjectTaskSketch(models.Model):
             'res_model': 'project.task.sketch',
             'view_mode': 'form',
             'res_id': self.id,
-            'target': 'new', # Opens as a popup dialog
+            'target': 'new',
         }
 
 # ==============================================================================
-#  IR ATTACHMENT MODEL (NEW)
+#  IR ATTACHMENT MODEL
 # ==============================================================================
 class IrAttachment(models.Model):
     _inherit = 'ir.attachment'
 
     def action_send_attachment_whatsapp(self):
         self.ensure_one()
-        # Find the related task
         task = self.env['project.task'].search([
             ('proof_attachment_ids', 'in', self.ids)
         ], limit=1)
@@ -920,7 +886,6 @@ class IrAttachment(models.Model):
         if not phone: 
             raise UserError(_("لا يوجد رقم هاتف للعميل: %s") % partner.name)
 
-        # Generate a public URL for the attachment
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         download_url = f"{base_url}/web/content/{self.id}?download=true"
         
