@@ -753,6 +753,21 @@ class ProjectTask(models.Model):
         whatsapp_url = f"https://web.whatsapp.com/send?phone={cleaned_phone}&text={encoded_message}"
         return { 'type': 'ir.actions.act_url', 'url': whatsapp_url, 'target': 'new' }
         
+    def action_create_new_sketch(self):
+        self.ensure_one()
+        # Create an empty sketch record automatically
+        new_sketch = self.env['project.task.sketch'].create({
+            'task_id': self.id,
+        })
+        # Open it in the popup editor
+        return {
+            'name': _('Sketch Editor'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'project.task.sketch',
+            'view_mode': 'form',
+            'res_id': new_sketch.id,
+            'target': 'new',
+        }
     @api.model
     def _send_periodic_task_reminders(self):
         open_tasks = self.search([
@@ -798,6 +813,18 @@ class ProjectTaskSketch(models.Model):
     sketch_image = fields.Binary(string="Sketch Image", attachment=True)
     created_by_id = fields.Many2one('res.users', string='Created By', default=lambda self: self.env.user, readonly=True)
     create_date = fields.Datetime(string='Creation Date', readonly=True)
+
+    # 👇 ADD THIS METHOD 👇
+    def action_open_sketch_editor(self):
+        self.ensure_one()
+        return {
+            'name': _('Sketch Editor'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'project.task.sketch',
+            'view_mode': 'form',
+            'res_id': self.id,
+            'target': 'new', # Opens as a popup dialog
+        }
 
 # ==============================================================================
 #  IR ATTACHMENT MODEL (NEW)
