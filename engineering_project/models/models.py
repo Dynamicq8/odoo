@@ -627,6 +627,8 @@ class ProjectProject(models.Model):
                     'name': sub_name,
                     'project_id': self.id,
                     'parent_id': new_task.id,
+                    'stage_id': stage_id,  # 👈 هذا السطر هو الأهم لكي تظهر المهمة
+
                     'is_disabled': is_disabled,
                 })
 
@@ -637,6 +639,7 @@ class ProjectProject(models.Model):
                     'name': sub_name,
                     'project_id': self.id,
                     'parent_id': new_task.id,
+                    'stage_id': stage_id,  # 👈 هذا السطر هو الأهم لكي تظهر المهمة
                     'is_disabled': is_disabled,
                 })
 
