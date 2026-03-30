@@ -69,7 +69,6 @@
         <field name="arch" type="xml">
             
             <xpath expr="//header" position="inside">
-                <!-- إخفاء الأزرار إذا كانت المهمة مقفلة -->
                 <button name="%(engineering_project.action_report_initial_design_form)d" 
                         string="طباعة نموذج المشروع (Print PDF)" type="action" class="btn-primary"
                         invisible="is_disabled"/>
@@ -90,7 +89,7 @@
                 </div>
             </xpath>
             
-            <!-- حقول الشروط لإخفاء وإظهار التبويبات -->
+            <!-- حقول الشروط لإخفاء التبويبات المتواجدة هنا وفي الموديولات الأخرى -->
             <xpath expr="//notebook" position="before">
                 <field name="is_architectural_task" invisible="1"/>
                 <field name="is_doc_task" invisible="1"/>
@@ -101,14 +100,10 @@
                     <field name="workflow_step" invisible="1"/>
                     
                     <div class="mb-3 mt-2">
-                        <!-- زر تحميل المراحل مخفي إذا كانت المهمة مقفلة -->
                         <button name="action_load_default_phases" type="object" 
                                 string="تحميل المراحل الافتراضية (Load Default Phases)" 
                                 class="btn-secondary" icon="fa-list-ol"
                                 invisible="phase_ids != [] or is_disabled"/>
-                        <span class="text-muted ms-3">
-                            <i class="fa fa-info-circle"/> للمشاريع الاستثمارية/التجارية، يمكنك إضافة أدوار ومراحل جديدة يدوياً من الأسفل.
-                        </span>
                     </div>
 
                     <field name="phase_ids" context="{'default_task_id': active_id}" readonly="is_disabled">
@@ -121,18 +116,7 @@
                     </field>
                 </page>
 
-                <!-- ================== NEW TAB 1: COMMITMENTS (التعهدات) ================== -->
-                <page string="التعهدات (Commitments)" name="commitments" invisible="not is_doc_task">
-                    <field name="commitment_ids" readonly="is_disabled">
-                        <tree editable="bottom">
-                            <field name="name" string="التعهد"/>
-                            <field name="product_uom_qty" string="الكمية"/>
-                            <field name="price_unit" string="السعر"/>
-                        </tree>
-                    </field>
-                </page>
-
-                <!-- ================== NEW TAB 2: SKETCHES (One2Many) ================== -->
+                <!-- ================== NEW TAB 1: SKETCHES ================== -->
                 <page string="رسومات كروكي (Sketches)" name="sketches" invisible="not is_architectural_task">
                     <field name="sketch_ids" nolabel="1" readonly="is_disabled">
                         <tree>
@@ -157,11 +141,11 @@
                     <field name="sketch_count" invisible="1"/>
                 </page>
 
-                <!-- ================== NEW TAB 3: ATTACHMENTS ================= -->
-                <!-- مرئي في كل المهام بدون استثناء (لا يحتوي على invisible condition) -->
+                <!-- ================== NEW TAB 2: ATTACHMENTS ================= -->
+                <!-- مرئي دائماً -->
                 <page string="المرفقات (Attachments)" name="proofs_attachments">
                     <p class="text-muted">
-                        قم برفع صور، ملفات PDF، أو أي مستندات أخرى كإثباتات للمهمة. (اضغط على إضافة سطر للرفع)
+                        قم برفع صور، ملفات PDF، أو أي مستندات أخرى كإثباتات للمهمة.
                     </p>
                     <field name="proof_attachment_ids" nolabel="1">
                          <tree editable="bottom">
@@ -197,21 +181,17 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_kanban"/>
         <field name="arch" type="xml">
-            
             <xpath expr="//templates" position="before">
                 <field name="is_disabled" invisible="1"/>
             </xpath>
-
             <xpath expr="//t[@t-name='kanban-box']/div" position="attributes">
                 <attribute name="t-attf-style">opacity: #{record.is_disabled.raw_value ? '0.4' : '1.0'}; pointer-events: #{record.is_disabled.raw_value ? 'none' : 'auto'};</attribute>
             </xpath>
-            
             <xpath expr="//strong[hasclass('o_kanban_record_title')]" position="after">
                 <div t-if="record.is_disabled.raw_value" class="text-danger mt-1" style="font-weight: bold; font-size: 11px;">
                     <i class="fa fa-lock"/> مقفلة (بانتظار المهام السابقة)
                 </div>
             </xpath>
-            
         </field>
     </record>
 </odoo>
