@@ -7,39 +7,47 @@ _logger = logging.getLogger(__name__)
 
 
 # =========================================================
-# NEW 🚀: INHERIT PROJECT.PROJECT MODEL
+# PROJECT.PROJECT MODEL
 # =========================================================
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    # This field will store commitments linked directly to the Project
     commitment_ids = fields.One2many(
-        'engineering.project.commitment', # Note: This links to a NEW model below
+        'engineering.project.commitment', 
         'project_id',
         string='Engineering Commitments (التعهدات)'
     )
 
-    # This is a copy of the function from ProjectTask, adapted for ProjectProject
     def action_load_commitments(self):
         for project in self:
+            # Base domain for commitments
+            domain = [('is_commitment', '=', True)]
+
+            # 1. Check Building Type
             building_type = getattr(project, 'building_type', False)
-
-            if not building_type:
-                domain = [('is_commitment', '=', True), ('building_type', '=', 'all')]
+            if building_type:
+                domain.append(('building_type', 'in', [building_type, 'all']))
             else:
-                domain = [('is_commitment', '=', True), ('building_type', 'in', [building_type, 'all'])]
+                domain.append(('building_type', '=', 'all'))
 
+            # 2. Check Service Type
+            service_type = getattr(project, 'service_type', False)
+            if service_type:
+                domain.append(('service_type', 'in', [service_type, 'all']))
+            else:
+                domain.append(('service_type', '=', 'all'))
+
+            # Search templates matching BOTH conditions
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = project.commitment_ids.mapped('sign_template_id.id')
 
             for template in templates:
                 if template.id not in existing_template_ids:
                     self.env['engineering.project.commitment'].create({
-                        'project_id': project.id, # Link to the project
+                        'project_id': project.id,
                         'sign_template_id': template.id,
                     })
 
-    # This is a copy of the function from ProjectTask, adapted for ProjectProject
     def action_generate_commitments_pdf(self):
         self.ensure_one()
 
@@ -47,7 +55,7 @@ class ProjectProject(models.Model):
         if not required_commitments:
             raise UserError(_("Please mark at least one commitment as Required."))
 
-        project = self # In this model, 'self' is the project itself
+        project = self
         if not project.partner_id:
             raise UserError(_("Project must have a customer."))
 
@@ -78,14 +86,13 @@ class ProjectProject(models.Model):
                 'request_item_ids': signers,
             })
             
-            # Auto-fill logic remains largely the same
             replacements = {
                 'name': project.partner_id.name or '',
                 'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-                'governorate': project.governorate_id.name if project.governorate_id else '',
-                'region': project.region_id.name if project.region_id else '',
-                'block': project.block_no or '',
-                'plot': project.plot_no or '',
+                'governorate': project.governorate_id.name if getattr(project, 'governorate_id', False) else '',
+                'region': project.region_id.name if getattr(project, 'region_id', False) else '',
+                'block': getattr(project, 'block_no', ''),
+                'plot': getattr(project, 'plot_no', ''),
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }
@@ -111,7 +118,7 @@ class ProjectProject(models.Model):
 
 
 # =========================================================
-# EXISTING: PROJECT.TASK MODEL (NO CHANGES NEEDED HERE)
+# PROJECT.TASK MODEL
 # =========================================================
 class ProjectTask(models.Model):
     _inherit = 'project.task'
@@ -124,13 +131,26 @@ class ProjectTask(models.Model):
 
     def action_load_commitments(self):
         for task in self:
-            building_type = getattr(task.project_id, 'building_type', False)
+            project = task.project_id
+            
+            # Base domain for commitments
+            domain = [('is_commitment', '=', True)]
 
-            if not building_type:
-                domain = [('is_commitment', '=', True), ('building_type', '=', 'all')]
+            # 1. Check Building Type
+            building_type = getattr(project, 'building_type', False)
+            if building_type:
+                domain.append(('building_type', 'in', [building_type, 'all']))
             else:
-                domain = [('is_commitment', '=', True), ('building_type', 'in', [building_type, 'all'])]
+                domain.append(('building_type', '=', 'all'))
 
+            # 2. Check Service Type
+            service_type = getattr(project, 'service_type', False)
+            if service_type:
+                domain.append(('service_type', 'in', [service_type, 'all']))
+            else:
+                domain.append(('service_type', '=', 'all'))
+
+            # Search templates matching BOTH conditions
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = task.commitment_ids.mapped('sign_template_id.id')
 
@@ -182,10 +202,10 @@ class ProjectTask(models.Model):
             replacements = {
                 'name': project.partner_id.name or '',
                 'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-                'governorate': project.governorate_id.name if project.governorate_id else '',
-                'region': project.region_id.name if project.region_id else '',
-                'block': project.block_no or '',
-                'plot': project.plot_no or '',
+                'governorate': project.governorate_id.name if getattr(project, 'governorate_id', False) else '',
+                'region': project.region_id.name if getattr(project, 'region_id', False) else '',
+                'block': getattr(project, 'block_no', ''),
+                'plot': getattr(project, 'plot_no', ''),
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }

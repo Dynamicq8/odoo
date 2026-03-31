@@ -3,7 +3,29 @@
 
     <!--
     =================================================
-    1. Add "Commitments" Tab to the TASK Form View
+    1. Add Fields to SIGN TEMPLATE Form View
+    =================================================
+    -->
+    <record id="sign_template_view_form_inherit_engineering" model="ir.ui.view">
+        <field name="name">sign.template.form.inherit.engineering</field>
+        <field name="model">sign.template</field>
+        <field name="inherit_id" ref="sign.sign_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Engineering Commitment Settings (إعدادات التعهد الهندسي)">
+                    <group>
+                        <field name="is_commitment"/>
+                        <field name="building_type"/>
+                        <field name="service_type"/> <!-- ADDED SERVICE TYPE HERE -->
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!--
+    =================================================
+    2. Add "Commitments" Tab to the TASK Form View
     =================================================
     -->
     <record id="project_task_view_form_inherit_commitments" model="ir.ui.view">
@@ -60,7 +82,7 @@
 
     <!--
     ====================================================
-    2. Add "Commitments" Tab to the main PROJECT Form View
+    3. Add "Commitments" Tab to the main PROJECT Form View
     ====================================================
     -->
     <record id="project_project_view_form_inherit_commitments" model="ir.ui.view">

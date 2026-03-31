@@ -11,4 +11,18 @@ class SignTemplate(models.Model):
         ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع'), ('all', 'جميع الأنواع')
     ], string="Building Type (نوع العقار)", default='all')
     
+    # ADDED SERVICE TYPE FIELD
+    service_type = fields.Selection([
+        ('new_construction', 'بناء جديد'), 
+        ('demolition', 'هدم'), 
+        ('modification', 'تعديل'), 
+        ('addition', 'اضافة'), 
+        ('addition_modification', 'تعديل واضافة'), 
+        ('supervision_only', 'إشراف هندسي فقط'), 
+        ('renovation', 'ترميم'), 
+        ('internal_partitions', 'قواطع داخلية'), 
+        ('shades_garden', 'مظلات / حدائق'),
+        ('all', 'جميع الأنواع') # Added 'all' for service type as well
+    ], string="Service Type (نوع الخدمة)", default='all')
+    
     is_commitment = fields.Boolean(string="Is Engineering Commitment? (تعهد هندسي؟)", default=False)

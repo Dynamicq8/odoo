@@ -10,6 +10,7 @@
                     <group>
                         <field name="is_commitment"/>
                         <field name="building_type"/>
+                        <field name="service_type"/> <!-- ADDED SERVICE TYPE HERE -->
                     </group>
                 </group>
             </xpath>
