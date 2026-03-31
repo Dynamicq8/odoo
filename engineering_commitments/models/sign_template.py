@@ -25,4 +25,4 @@ class SignTemplate(models.Model):
         ('all', 'جميع الأنواع') # Added 'all' for service type as well
     ], string="Service Type (نوع الخدمة)", default='all')
     
-    is_commitment = fields.Boolean(string="Is Engineering Commitment? (تعهد هندسي؟)", default=False)
+    is_commitment = fields.Boolean(string="Is Engineering Commitment? (تعهد هندسي؟)", default=True)
