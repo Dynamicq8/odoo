@@ -431,10 +431,27 @@ class ProjectProject(models.Model):
             val['user_ids'] = [(4, user_id)]
 
         # ========================================================
-        #  SUBTASK CREATION LOGIC IS INJECTED HERE
+        #  MAIN TASK CREATION
         # ========================================================
         new_task = self.env['project.task'].create(val)
         task_name = step_data['name']
+
+        # ========================================================
+        #  SUBTASK CREATION LOGIC 
+        # ========================================================
+        # 1. We link parent_id to the main task
+        # 2. We DO NOT assign a stage_id so it doesn't force itself onto the Kanban
+        # 3. We set 'display_in_project' to False to hide it from the project board completely
+        
+        subtask_base_vals = {
+            'project_id': self.id,
+            'parent_id': new_task.id,
+            'is_disabled': is_disabled,
+        }
+        
+        # Safely hide subtask from Kanban board for newer Odoo versions (v15, v16, v17)
+        if 'display_in_project' in self.env['project.task']._fields:
+            subtask_base_vals['display_in_project'] = False
 
         if "تجميع المستندات" in task_name or "جمع الوثائق" in task_name:
             subtasks_to_create = []
@@ -448,23 +465,15 @@ class ProjectProject(models.Model):
                 subtasks_to_create = ["الوثيقه", "المدنيه", "الموقع العام"]
 
             for sub_name in subtasks_to_create:
-                self.env['project.task'].create({
-                    'name': sub_name,
-                    'project_id': self.id,
-                    'parent_id': new_task.id,
-                    'stage_id': stage_id, 
-                    'is_disabled': is_disabled,
-                })
+                vals = subtask_base_vals.copy()
+                vals['name'] = sub_name
+                self.env['project.task'].create(vals)
 
         if "فحص التربة" in task_name and "الكهرباء" in task_name:
             for sub_name in ["فحص التربه تم الأرسال", "فحص التربه تم الأعتماد", "الكهرباء تم الأرسال", "الكهرباء تم الأعتماد"]:
-                self.env['project.task'].create({
-                    'name': sub_name,
-                    'project_id': self.id,
-                    'parent_id': new_task.id,
-                    'stage_id': stage_id,
-                    'is_disabled': is_disabled,
-                })
+                vals = subtask_base_vals.copy()
+                vals['name'] = sub_name
+                self.env['project.task'].create(vals)
 
         if "الإشراف على التنفيذ" in task_name or "الإشراف علي اللتنفيذ" in task_name:
             subtasks_to_create = []
@@ -484,14 +493,9 @@ class ProjectProject(models.Model):
                 ]
             
             for sub_name in subtasks_to_create:
-                self.env['project.task'].create({
-                    'name': sub_name,
-                    'project_id': self.id,
-                    'parent_id': new_task.id,
-                    'stage_id': stage_id,
-                    'is_disabled': is_disabled,
-                })
-
+                vals = subtask_base_vals.copy()
+                vals['name'] = sub_name
+                self.env['project.task'].create(vals)
 
 # ==============================================================================
 #  PROJECT TASK MODEL
