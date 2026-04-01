@@ -166,13 +166,48 @@ class SaleOrder(models.Model):
     def _compute_required_documents(self):
         for order in self:
             docs = "<ul>"
-            docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
-            if order.service_type == 'new_construction':
-                docs += "<li>وثيقة الملكية</li><li>كتاب التخصيص</li><li>مخطط المساحة</li>"
-            elif order.service_type in ['modification', 'addition', 'addition_modification']:
-                docs += "<li>رخصة البناء الأصلية</li><li>المخططات المرخصة</li><li>وثيقة البيت</li>"
-            elif order.service_type == 'demolition':
-                docs += "<li>كتاب براءة ذمة من الكهرباء والماء</li><li>رخصة البناء القديمة</li>"
+            is_new_or_add = order.service_type in ['new_construction', 'addition', 'addition_modification']
+            
+            if order.building_type == 'residential' and is_new_or_add:
+                docs += "<li>الوثيقة</li>"
+                docs += "<li>المدنيات</li>"
+                docs += "<li>الموقع العام</li>"
+                docs += "<li>مخطط المرخص</li>"
+                docs += "<li>رخصة البناء</li>"
+                docs += "<li>صور عدادات الكهرباء</li>"
+                docs += "<li>صور وجهات القسيمة</li>"
+            elif order.building_type == 'commercial' and is_new_or_add:
+                docs += "<li>الوثيقة</li>"
+                docs += "<li>المدنيات</li>"
+                docs += "<li>اعتماد التوقيع ومدنية المفوض</li>"
+                docs += "<li>مخطط المرخص</li>"
+                docs += "<li>رخصة البناء</li>"
+                docs += "<li>صور عدادات الكهرباء</li>"
+                docs += "<li>صور وجهات القسيمة</li>"
+                docs += "<li>الارقام الاليه</li>"
+                docs += "<li>مخطط المطافئ ورخصة المطافئ</li>"
+                docs += "<li>كتب التفويض من الشركة</li>"
+            elif order.building_type == 'industrial' and is_new_or_add:
+                docs += "<li>عقد املاك الدوله</li>"
+                docs += "<li>المدنيات</li>"
+                docs += "<li>اعتماد التوقيع ومدنية المفوض</li>"
+                docs += "<li>مخطط المرخص</li>"
+                docs += "<li>رخصة البناء</li>"
+                docs += "<li>صور عدادات الكهرباء</li>"
+                docs += "<li>صور وجهات القسيمة</li>"
+                docs += "<li>الارقام الاليه</li>"
+                docs += "<li>مخطط المطافئ ورخصة المطافئ</li>"
+                docs += "<li>كتب التفويض من الشركة</li>"
+                docs += "<li>وصل ايجار سارى</li>"
+            else:
+                docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
+                if order.service_type == 'new_construction':
+                    docs += "<li>وثيقة الملكية</li><li>كتاب التخصيص</li><li>مخطط المساحة</li>"
+                elif order.service_type in ['modification', 'addition', 'addition_modification']:
+                    docs += "<li>رخصة البناء الأصلية</li><li>المخططات المرخصة</li><li>وثيقة البيت</li>"
+                elif order.service_type == 'demolition':
+                    docs += "<li>كتاب براءة ذمة من الكهرباء والماء</li><li>رخصة البناء القديمة</li>"
+            
             docs += "</ul>"
             order.required_documents = docs
 
@@ -455,10 +490,18 @@ class ProjectProject(models.Model):
 
         if "تجميع المستندات" in task_name or "جمع الوثائق" in task_name:
             subtasks_to_create = []
-            if self.building_type == 'residential' and self.service_type == 'shades_garden':
-                subtasks_to_create = ["الوثيقة", "المدنيات", "ورقة من الكهرباء تفيد دفعع المبالغ او الفاتوره", "رخصه بناء للقسيمه", "صور القسيمه", "صور الحديقه"]
+            is_new_or_add = self.service_type in ['new_construction', 'addition', 'addition_modification']
+            
+            if self.building_type == 'residential' and is_new_or_add:
+                subtasks_to_create = ["الوثيقة", "المدنيات", "الموقع العام", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمة"]
+            elif self.building_type == 'commercial' and is_new_or_add:
+                subtasks_to_create = ["الوثيقة", "المدنيات", "اعتماد التوقيع ومدنية المفوض", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمة", "الارقام الاليه", "مخطط المطافئ ورخصة المطافئ", "كتب التفويض من الشركة"]
+            elif self.building_type == 'industrial' and is_new_or_add:
+                subtasks_to_create = ["عقد املاك الدوله", "المدنيات", "اعتماد التوقيع ومدنية المفوض", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمة", "الارقام الاليه", "مخطط المطافئ ورخصة المطافئ", "كتب التفويض من الشركة", "وصل ايجار سارى"]
+            elif self.building_type == 'residential' and self.service_type == 'shades_garden':
+                subtasks_to_create = ["الوثيقة", "المدنيات", "ورقة من الكهرباء تفيد دفع المبالغ او الفاتوره", "رخصه بناء للقسيمه", "صور القسيمه", "صور الحديقه"]
             elif self.building_type == 'residential' and self.service_type == 'demolition':
-                subtasks_to_create = ["وثيقه الملكية", "المدنيات", "كتاب من وزاره الكهرباء و الماء قطع الكيبل", "كتاب براةه ذمه من وزاره المواصلات", "صور وجهات القسيمه"]
+                subtasks_to_create = ["وثيقه الملكية", "المدنيات", "كتاب من وزاره الكهرباء و الماء قطع الكيبل", "كتاب براءة ذمه من وزاره المواصلات", "صور وجهات القسيمه"]
             elif self.building_type in ['cooperative', 'commercial']:
                 subtasks_to_create = ["كتاب التخصيص", "المخطط المساحي", "مدنيه", "كتب التفويض من وزاره الأرقام الأليه"]
             else:
