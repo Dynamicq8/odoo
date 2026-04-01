@@ -64,17 +64,15 @@
                         type="object"
                         string="Create Site Visit Report"
                         icon="fa-file-pdf-o"
-                        class="btn-primary"
-                        />
+                        class="btn-primary"/>
             </xpath>
 
             <!-- TAB -->
             <xpath expr="//notebook" position="inside">
-<page string="Site Visit Reports"
-      attrs="{'invisible': [('workflow_step', 'not in', ['nra_5_1', 'nrn_5_2', 'rn_5_2'])]}">
+                <page string="Site Visit Reports"
+                      invisible="not show_site_visit_reports">
 
-
-                     <field name="site_visit_report_ids" nolabel="1">
+                    <field name="site_visit_report_ids" nolabel="1">
                         <tree>
                             <field name="name"/>
                             <field name="visit_date"/>
@@ -82,6 +80,7 @@
                             <field name="sent_to_customer"/>
                         </tree>
                     </field>
+
                 </page>
             </xpath>
 
