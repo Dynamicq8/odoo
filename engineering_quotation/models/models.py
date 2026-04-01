@@ -342,7 +342,7 @@ class ProjectProject(models.Model):
     draftsman_id = fields.Many2one('res.users', string="الرسام (صحي/مخططات)")
 
     workflow_started = fields.Boolean(default=False)
-    triggered_steps = fields.Text(string="المهام المنفذة (Legacy)", default="") # متروك حتى لا يحدث خطأ في الـ Database القديمة
+    triggered_steps = fields.Text(string="المهام المنفذة (Legacy)", default="") 
 
     def _get_project_stages_map(self):
         self.ensure_one()
@@ -370,10 +370,8 @@ class ProjectProject(models.Model):
         if not workflow:
             raise UserError(_("لا توجد خطة مهام مطابقة لنوع الخدمة والمبنى."))
 
-        # 1. التعديل الجوهري: نحدد حالة الإقفال بناءً على وجود مهام سابقة (depends_on)
         for step in workflow:
             depends_on = step.get('depends_on', [])
-            # إذا لم تكن هناك أي شروط للاعتماد (مثل مهام المرحلة الأولى)، تُنشأ مفتوحة.
             is_locked = len(depends_on) > 0 
             self._create_task_for_step(step, is_disabled=is_locked)
 
@@ -384,18 +382,13 @@ class ProjectProject(models.Model):
         wf_key = self._get_workflow_key()
         workflow = WORKFLOW_TEMPLATES.get(wf_key, [])
         
-        # سحب جميع مهام المشروع الحالي
         tasks = self.env['project.task'].search([('project_id', '=', self.id)])
-        
-        # إنشاء قاموس يحمل حالة كل مهمة لمعرفة هل تمت الموافقة عليها أم لا
         task_states = {t.workflow_step: t.state for t in tasks if t.workflow_step}
         
-        # 2. فحص جميع المهام المقفلة، وإذا تحققت جميع شروطها يتم فتحها
         for task in tasks:
             if not task.is_disabled or not task.workflow_step:
                 continue
                 
-            # البحث عن إعدادات هذه المهمة في القاموس لمعرفة على ماذا تعتمد
             step_template = next((s for s in workflow if s['code'] == task.workflow_step), None)
             if not step_template:
                 continue
@@ -404,11 +397,9 @@ class ProjectProject(models.Model):
             if not depends_on:
                 continue
                 
-            # التحقق مما إذا كانت كافة المهام السابقة المعتمد عليها في حالة "موافق عليها"
             all_approved = all(task_states.get(dep) == '03_approved' for dep in depends_on)
-            
             if all_approved:
-                task.is_disabled = False # فك القفل فوراً!
+                task.is_disabled = False 
 
     def _create_task_for_step(self, step_data, is_disabled=False):
         stages_map = self._get_project_stages_map()
@@ -439,7 +430,67 @@ class ProjectProject(models.Model):
         if user_id:
             val['user_ids'] = [(4, user_id)]
 
-        self.env['project.task'].create(val)
+        # ========================================================
+        #  SUBTASK CREATION LOGIC IS INJECTED HERE
+        # ========================================================
+        new_task = self.env['project.task'].create(val)
+        task_name = step_data['name']
+
+        if "تجميع المستندات" in task_name or "جمع الوثائق" in task_name:
+            subtasks_to_create = []
+            if self.building_type == 'residential' and self.service_type == 'shades_garden':
+                subtasks_to_create = ["الوثيقة", "المدنيات", "ورقة من الكهرباء تفيد دفعع المبالغ او الفاتوره", "رخصه بناء للقسيمه", "صور القسيمه", "صور الحديقه"]
+            elif self.building_type == 'residential' and self.service_type == 'demolition':
+                subtasks_to_create = ["وثيقه الملكية", "المدنيات", "كتاب من وزاره الكهرباء و الماء قطع الكيبل", "كتاب براةه ذمه من وزاره المواصلات", "صور وجهات القسيمه"]
+            elif self.building_type in ['cooperative', 'commercial']:
+                subtasks_to_create = ["كتاب التخصيص", "المخطط المساحي", "مدنيه", "كتب التفويض من وزاره الأرقام الأليه"]
+            else:
+                subtasks_to_create = ["الوثيقه", "المدنيه", "الموقع العام"]
+
+            for sub_name in subtasks_to_create:
+                self.env['project.task'].create({
+                    'name': sub_name,
+                    'project_id': self.id,
+                    'parent_id': new_task.id,
+                    'stage_id': stage_id, 
+                    'is_disabled': is_disabled,
+                })
+
+        if "فحص التربة" in task_name and "الكهرباء" in task_name:
+            for sub_name in ["فحص التربه تم الأرسال", "فحص التربه تم الأعتماد", "الكهرباء تم الأرسال", "الكهرباء تم الأعتماد"]:
+                self.env['project.task'].create({
+                    'name': sub_name,
+                    'project_id': self.id,
+                    'parent_id': new_task.id,
+                    'stage_id': stage_id,
+                    'is_disabled': is_disabled,
+                })
+
+        if "الإشراف على التنفيذ" in task_name or "الإشراف علي اللتنفيذ" in task_name:
+            subtasks_to_create = []
+            if self.building_type == 'residential':
+                subtasks_to_create = [
+                    "مرحلة الحفر", "مرحلة القواعد والشناجات", "مرحلة حوائط السرداب", 
+                    "مرحلة صب سقف السرداب", "مرحلة اعمده الدور الارضى", "مرحلة صب سقف الدور الارضى", 
+                    "مرحلة اعمده الدور الاول", "مرحلة صب سقف الدور الاول", "مرحلة اعمده الدور الثانى", 
+                    "مرحلة صب سقف الدور الثانى", "مرحلة اعمده الدور السطح", "مرحله صب سقف السطح"
+                ]
+            elif self.building_type == 'commercial':
+                subtasks_to_create = [
+                    "مرحله القواعد والشناجات", "مرحله حوائط السرداب", "مرحله صب سقف السرداب", 
+                    "مرحله اعمده الدور الارضى", "مرحله صب سقف الدور الارضى", "مرحله اعمده الدور الاول", 
+                    "مرحله صب سقف الدور الاول", "مرحله اعمده الدور الثانى", "مرحله صب سقف الدور الثانى", 
+                    "مرحله اعمده الدور السطح", "مرحله صب سقف السطح"
+                ]
+            
+            for sub_name in subtasks_to_create:
+                self.env['project.task'].create({
+                    'name': sub_name,
+                    'project_id': self.id,
+                    'parent_id': new_task.id,
+                    'stage_id': stage_id,
+                    'is_disabled': is_disabled,
+                })
 
 
 # ==============================================================================
@@ -455,7 +506,6 @@ class ProjectTask(models.Model):
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def write(self, vals):
-        # منع التعديلات إذا كانت مقفلة مع استثناء أمر فك القفل نفسه
         if 'stage_id' in vals or 'state' in vals:
             for task in self:
                 if task.is_disabled and vals.get('is_disabled') is not False:
@@ -463,7 +513,6 @@ class ProjectTask(models.Model):
 
         res = super(ProjectTask, self).write(vals)
         
-        # 3. بمجرد اختيار Approved، يتم فحص كامل السلسلة لفتح المهام التالية
         if vals.get('state') == '03_approved':
             for task in self:
                 if task.project_id:
