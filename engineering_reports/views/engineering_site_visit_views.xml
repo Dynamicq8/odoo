@@ -70,8 +70,15 @@
 
             <!-- TAB -->
             <xpath expr="//notebook" position="inside">
-                <page string="Site Visit Reports">
-                    <field name="site_visit_report_ids" nolabel="1">
+<page string="Site Visit Reports"
+      attrs="{
+          'invisible': [
+              ('workflow_step', 'not in', [
+                  'rn_5_2',
+                  'nrn_5_2',
+              ])
+          ]
+      }">                    <field name="site_visit_report_ids" nolabel="1">
                         <tree>
                             <field name="name"/>
                             <field name="visit_date"/>
