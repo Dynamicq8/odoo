@@ -58,6 +58,7 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
 
+            <!-- HEADER BUTTON -->
             <xpath expr="//header" position="inside">
                 <button name="action_create_site_visit_report"
                         type="object"
@@ -66,7 +67,13 @@
                         class="btn-primary"/>
             </xpath>
 
+            <!-- NOTEBOOK -->
             <xpath expr="//notebook" position="inside">
+
+                <!-- REQUIRED FIELD (FIX) -->
+                <field name="show_site_visit_reports" invisible="1"/>
+
+                <!-- TAB -->
                 <page string="Site Visit Reports"
                       invisible="not show_site_visit_reports">
 
@@ -80,6 +87,7 @@
                     </field>
 
                 </page>
+
             </xpath>
 
         </field>
