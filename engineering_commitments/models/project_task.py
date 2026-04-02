@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import models, fields, _
+from odoo import models, fields, api, _ # Added 'api' here for action_sign_now
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ class SignTemplate(models.Model):
 
 # =========================================================
 # 2. SUPPORTING MODELS FOR COMPANY CONTRACTS
+#    (NOW WITH action_sign_now METHODS)
 # =========================================================
 class EngineeringProjectCompanyContract(models.Model):
     _name = 'engineering.project.company.contract'
@@ -60,6 +61,37 @@ class EngineeringProjectCompanyContract(models.Model):
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
 
+    @api.model
+    def action_sign_now(self):
+        self.ensure_one()
+        if not self.sign_request_id:
+            raise UserError(_("No generated document yet."))
+            
+        request = self.sign_request_id
+        user = self.env.user
+        
+        is_admin = user.has_group('base.group_system')
+        # Assuming 'secretary_id' is a field on the user model or related partner
+        is_secretary = bool(getattr(user, 'secretary_id', False)) 
+        
+        if is_admin or is_secretary:
+            # Admins/Secretaries can sign as the first available signer
+            request_item = request.request_item_ids[:1]
+        else:
+            # Regular users sign only if they are the assigned partner
+            request_item = request.request_item_ids.filtered(
+                lambda r: r.partner_id.id == user.partner_id.id
+            )
+            
+        if not request_item:
+            raise UserError(_("You are not assigned to sign this document."))
+            
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/sign/document/{request.id}/{request_item[0].access_token}',
+            'target': 'new',
+        }
+
 
 class EngineeringTaskCompanyContract(models.Model):
     _name = 'engineering.task.company.contract'
@@ -69,6 +101,34 @@ class EngineeringTaskCompanyContract(models.Model):
     sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    @api.model
+    def action_sign_now(self):
+        self.ensure_one()
+        if not self.sign_request_id:
+            raise UserError(_("No generated document yet."))
+            
+        request = self.sign_request_id
+        user = self.env.user
+        
+        is_admin = user.has_group('base.group_system')
+        is_secretary = bool(getattr(user, 'secretary_id', False))
+        
+        if is_admin or is_secretary:
+            request_item = request.request_item_ids[:1]
+        else:
+            request_item = request.request_item_ids.filtered(
+                lambda r: r.partner_id.id == user.partner_id.id
+            )
+            
+        if not request_item:
+            raise UserError(_("You are not assigned to sign this document."))
+            
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/sign/document/{request.id}/{request_item[0].access_token}',
+            'target': 'new',
+        }
 
 
 # =========================================================
@@ -232,6 +292,7 @@ class ProjectProject(models.Model):
 
             for item in template.sign_item_ids:
                 field_name = (item.name or '').strip().lower()
+                # _logger.warning(f"FIELD DETECTED >>> '{field_name}'") # Removed for cleaner log
                 if field_name in replacements:
                     value = replacements[field_name]
                     signer = sign_request.request_item_ids.filtered(
@@ -404,7 +465,7 @@ class ProjectTask(models.Model):
 
             for item in template.sign_item_ids:
                 field_name = (item.name or '').strip().lower()
-                _logger.warning(f"FIELD DETECTED >>> '{field_name}'")
+                # _logger.warning(f"FIELD DETECTED >>> '{field_name}'") # Removed for cleaner logs
                 if field_name in replacements:
                     value = replacements[field_name]
                     signer = sign_request.request_item_ids.filtered(
