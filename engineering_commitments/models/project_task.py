@@ -84,7 +84,7 @@ class ProjectProject(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.project.company.contract', 
+        'engineering.project.contract', # <--- CORRECTED MODEL NAME HERE
         'project_id',
         string='Company Contracts (عقود الشركة)'
     )
@@ -261,7 +261,7 @@ class ProjectTask(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-    _name = 'engineering.project.contract' # CHANGED FROM 'engineering.project.company.contract'
+        'engineering.task.commitment',
         'task_id',
         string='Company Contracts (عقود الشركة)'
     )
