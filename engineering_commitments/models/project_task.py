@@ -106,7 +106,7 @@ class ProjectProject(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.project.company.contract', # <--- FIXED TYPO HERE
+        'engineering.project.contract', # <--- FIXED: Now matches your new model name
         'project_id',
         string='Company Contracts (عقود الشركة)'
     )
@@ -327,7 +327,7 @@ class ProjectTask(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.task.company.contract', # <--- FIXED TYPO HERE 
+        'engineering.task.contract', # <--- FIXED: Now matches your new model name
         'task_id',
         string='Company Contracts (عقود الشركة)'
     )
