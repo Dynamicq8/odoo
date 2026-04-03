@@ -41,7 +41,7 @@ class EngineeringTaskCommitment(models.Model):
         }
 
 class EngineeringTaskCompanyContract(models.Model):
-    _name = 'engineering.task.contract'   # CHANGED FROM 'engineering.task.company.contract'
+    _name = 'engineering.task.company.contract'   # CHANGED FROM 'engineering.task.company.contract'
     _description = 'Engineering Task Company Contract Line'
 
     task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
