@@ -26,16 +26,8 @@
 
     <!--
     =================================================
-    2. Add "Commitments" and "Company Contracts" Tabs to the TASK Form View
+    2. Add Tabs to the TASK Form View
     =================================================
-
-    Visibility rules for التعهدات tab on tasks:
-    • Shown only for paperwork tasks (secretary / accountant role)
-    • HIDDEN for:
-        - العقد وتحصيل الدفعة الأولى
-          codes: rn_1_3 | nrn_1_3 | ra_1_5 | nra_1_5 | dem_1_2
-        - سيستم الأعمدة
-          codes: rn_2_1 | nrn_2_1 | ra_2_1 | nra_2_1
     -->
     <record id="project_task_view_form_inherit_documents" model="ir.ui.view">
         <field name="name">project.task.form.inherit.documents</field>
@@ -139,6 +131,55 @@
                     </field>
                 </page>
 
+                <!-- NEW: PHASES APPROVALS tab (Subtasks & Supervision) -->
+                <page string="Phases Approvals (اعتماد المراحل)"
+                      name="engineering_phases_approvals"
+                      invisible="not parent_id"> <!-- Visible ONLY on Subtasks -->
+
+                    <!-- Ensure state field is loaded in view so invisible conditions work properly -->
+                    <field name="state" invisible="1"/>
+
+                    <!-- Warning shown when Subtask is NOT approved yet -->
+                    <div class="alert alert-info" role="alert" invisible="state == '03_approved'">
+                        <i class="fa fa-info-circle"/> يجب الموافقة على هذه المرحلة (Approved) أولاً لتتمكن من إثبات واعتماد المستندات.
+                    </div>
+
+                    <!-- Document loading shown ONLY when Subtask IS approved -->
+                    <div class="mb-3" invisible="state != '03_approved'">
+                        <button name="action_load_phases_approvals"
+                                type="object"
+                                string="Load Phase Template"
+                                class="btn-primary"
+                                icon="fa-download"/>
+
+                        <button name="action_generate_phases_approvals_pdf"
+                                type="object"
+                                string="Generate PDF"
+                                class="btn-success ms-2"
+                                icon="fa-file-pdf-o"/>
+                    </div>
+
+                    <!-- The Sign Form shown ONLY when Subtask IS approved -->
+                    <field name="phase_approval_ids" invisible="state != '03_approved'">
+                        <tree editable="bottom">
+                            <field name="sign_template_id"
+                                   domain="[('document_type', '=', 'phases_approval')]"
+                                   options="{'no_create': True}"/>
+
+                            <field name="is_required" widget="boolean_toggle"/>
+
+                            <field name="sign_request_id" readonly="1"/>
+
+                            <!-- Renamed to إثبات -->
+                            <button name="action_sign_now"
+                                    type="object"
+                                    string="إثبات (Sign Now)"
+                                    class="btn-primary"
+                                    attrs="{'invisible': [('sign_request_id','=',False)]}"/>
+                        </tree>
+                    </field>
+                </page>
+
             </xpath>
 
         </field>
@@ -146,10 +187,8 @@
 
     <!--
     ====================================================
-    3. Add "Commitments" and "Company Contracts" Tabs to the main PROJECT Form View
+    3. Add Tabs to the main PROJECT Form View
     ====================================================
-    No task-level filtering needed here — project-level documents
-    always show regardless of task type.
     -->
     <record id="project_project_view_form_inherit_documents" model="ir.ui.view">
         <field name="name">project.project.form.inherit.documents</field>
@@ -222,6 +261,41 @@
                             <button name="action_sign_now"
                                     type="object"
                                     string="Sign Now"
+                                    class="btn-primary"
+                                    attrs="{'invisible': [('sign_request_id','=',False)]}"/>
+                        </tree>
+                    </field>
+                </page>
+
+                <!-- NEW: PHASES APPROVALS tab (Project Level) -->
+                <page string="Phases Approvals (اعتماد المراحل)" name="engineering_phases_approvals">
+                    <div class="mb-3">
+                        <button name="action_load_phases_approvals"
+                                type="object"
+                                string="Load Templates"
+                                class="btn-primary"
+                                icon="fa-download"/>
+
+                        <button name="action_generate_phases_approvals_pdf"
+                                type="object"
+                                string="Generate PDFs"
+                                class="btn-success ms-2"
+                                icon="fa-file-pdf-o"/>
+                    </div>
+
+                    <field name="phase_approval_ids">
+                        <tree editable="bottom">
+                            <field name="sign_template_id"
+                                   domain="[('document_type', '=', 'phases_approval')]"
+                                   options="{'no_create': True}"/>
+
+                            <field name="is_required" widget="boolean_toggle"/>
+
+                            <field name="sign_request_id" readonly="1"/>
+
+                            <button name="action_sign_now"
+                                    type="object"
+                                    string="إثبات (Sign Now)"
                                     class="btn-primary"
                                     attrs="{'invisible': [('sign_request_id','=',False)]}"/>
                         </tree>

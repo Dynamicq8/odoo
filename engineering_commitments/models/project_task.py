@@ -15,9 +15,10 @@ class SignTemplate(models.Model):
     document_type = fields.Selection([
         ('commitment', 'تعهد هندسي (Engineering Commitment)'),
         ('company_contract', 'عقد شركة (Company Contract)'),
+        ('phases_approval', 'اعتماد المراحل (Phases Approval)'),  # <--- ADDED PHASES APPROVAL HERE
         ('none', 'غير محدد (None)')
     ], string="Document Type (نوع المستند)", default='none', 
-       help="Choose whether this is an Engineering Commitment or a Company Contract.")
+       help="Choose whether this is an Engineering Commitment, Company Contract, or Phases Approval.")
 
     package_id = fields.Many2one('engineering.package', string="الباقة (Package)",
         help="If selected, this contract will only load for projects using this package.")
@@ -49,7 +50,7 @@ class SignTemplate(models.Model):
 
 
 # =========================================================
-# 2. SUPPORTING MODELS FOR COMPANY CONTRACTS
+# 2. SUPPORTING MODELS FOR COMPANY CONTRACTS & PHASES APPROVALS
 # =========================================================
 class EngineeringProjectCompanyContract(models.Model):
     _name = 'engineering.project.company.contract'
@@ -71,6 +72,27 @@ class EngineeringTaskCompanyContract(models.Model):
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
 
 
+# --- NEW SUPPORTING MODELS FOR PHASES APPROVAL ---
+class EngineeringProjectPhaseApproval(models.Model):
+    _name = 'engineering.project.phase.approval'
+    _description = 'Engineering Project Phase Approval Line'
+
+    project_id = fields.Many2one('project.project', string='Project', ondelete='cascade')
+    sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
+    is_required = fields.Boolean(string='Required', default=False)
+    sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+
+class EngineeringTaskPhaseApproval(models.Model):
+    _name = 'engineering.task.phase.approval'
+    _description = 'Engineering Task Phase Approval Line'
+
+    task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
+    sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
+    is_required = fields.Boolean(string='Required', default=False)
+    sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+
 # =========================================================
 # 3. PROJECT.PROJECT MODEL
 # =========================================================
@@ -84,9 +106,15 @@ class ProjectProject(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.project.contract', # <--- CORRECTED MODEL NAME HERE
+        'engineering.project.company.contract', # <--- FIXED TYPO HERE
         'project_id',
         string='Company Contracts (عقود الشركة)'
+    )
+
+    phase_approval_ids = fields.One2many(
+        'engineering.project.phase.approval', # <--- NEW FIELD
+        'project_id',
+        string='Phases Approvals (اعتماد المراحل)'
     )
 
     # ---------------------------------------------------------
@@ -96,21 +124,18 @@ class ProjectProject(models.Model):
         for project in self:
             domain = [('document_type', '=', 'commitment')]
 
-            # 1. Check Building Type
             building_type = getattr(project, 'building_type', False)
             if building_type:
                 domain.append(('building_type', 'in', [building_type, 'all']))
             else:
                 domain.append(('building_type', '=', 'all'))
 
-            # 2. Check Service Type
             service_type = getattr(project, 'service_type', False)
             if service_type:
                 domain.append(('service_type', 'in', [service_type, 'all']))
             else:
                 domain.append(('service_type', '=', 'all'))
 
-            # 3. Check Package
             package_id = getattr(project, 'package_id', False)
             if package_id:
                 domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
@@ -141,24 +166,20 @@ class ProjectProject(models.Model):
     # ---------------------------------------------------------
     def action_load_company_contracts(self):
         for project in self:
-            # Change domain to search ONLY for company_contract
             domain = [('document_type', '=', 'company_contract')]
 
-            # 1. Check Building Type
             building_type = getattr(project, 'building_type', False)
             if building_type:
                 domain.append(('building_type', 'in', [building_type, 'all']))
             else:
                 domain.append(('building_type', '=', 'all'))
 
-            # 2. Check Service Type
             service_type = getattr(project, 'service_type', False)
             if service_type:
                 domain.append(('service_type', 'in', [service_type, 'all']))
             else:
                 domain.append(('service_type', '=', 'all'))
 
-            # 3. Check Package
             package_id = getattr(project, 'package_id', False)
             if package_id:
                 domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
@@ -185,7 +206,52 @@ class ProjectProject(models.Model):
         return True
 
     # ---------------------------------------------------------
-    # HELPER FUNCTION FOR BOTH
+    # PHASES APPROVAL FUNCTIONS (NEW)
+    # ---------------------------------------------------------
+    def action_load_phases_approvals(self):
+        for project in self:
+            domain = [('document_type', '=', 'phases_approval')]
+
+            building_type = getattr(project, 'building_type', False)
+            if building_type:
+                domain.append(('building_type', 'in', [building_type, 'all']))
+            else:
+                domain.append(('building_type', '=', 'all'))
+
+            service_type = getattr(project, 'service_type', False)
+            if service_type:
+                domain.append(('service_type', 'in', [service_type, 'all']))
+            else:
+                domain.append(('service_type', '=', 'all'))
+
+            package_id = getattr(project, 'package_id', False)
+            if package_id:
+                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
+            else:
+                domain.append(('package_id', '=', False))
+
+            templates = self.env['sign.template'].search(domain)
+            existing_template_ids = project.phase_approval_ids.mapped('sign_template_id.id')
+
+            for template in templates:
+                if template.id not in existing_template_ids:
+                    self.env['engineering.project.phase.approval'].create({
+                        'project_id': project.id,
+                        'sign_template_id': template.id,
+                    })
+
+    def action_generate_phases_approvals_pdf(self):
+        self.ensure_one()
+        required_approvals = self.phase_approval_ids.filtered(lambda c: c.is_required)
+        if not required_approvals:
+            raise UserError(_("Please mark at least one phases approval as Required."))
+
+        self._generate_pdfs_for_lines(required_approvals)
+        return True
+
+
+    # ---------------------------------------------------------
+    # HELPER FUNCTION FOR ALL
     # ---------------------------------------------------------
     def _generate_pdfs_for_lines(self, lines):
         project = self
@@ -261,9 +327,15 @@ class ProjectTask(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.task.commitment',
+        'engineering.task.company.contract', # <--- FIXED TYPO HERE 
         'task_id',
         string='Company Contracts (عقود الشركة)'
+    )
+
+    phase_approval_ids = fields.One2many(
+        'engineering.task.phase.approval', # <--- NEW FIELD
+        'task_id',
+        string='Phases Approvals (اعتماد المراحل)'
     )
 
     # ---------------------------------------------------------
@@ -357,7 +429,53 @@ class ProjectTask(models.Model):
         return True
 
     # ---------------------------------------------------------
-    # HELPER FUNCTION FOR BOTH
+    # PHASES APPROVAL FUNCTIONS (NEW)
+    # ---------------------------------------------------------
+    def action_load_phases_approvals(self):
+        for task in self:
+            project = task.project_id
+            domain = [('document_type', '=', 'phases_approval')]
+
+            building_type = getattr(project, 'building_type', False)
+            if building_type:
+                domain.append(('building_type', 'in', [building_type, 'all']))
+            else:
+                domain.append(('building_type', '=', 'all'))
+
+            service_type = getattr(project, 'service_type', False)
+            if service_type:
+                domain.append(('service_type', 'in', [service_type, 'all']))
+            else:
+                domain.append(('service_type', '=', 'all'))
+
+            package_id = getattr(project, 'package_id', False)
+            if package_id:
+                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
+            else:
+                domain.append(('package_id', '=', False))
+
+            templates = self.env['sign.template'].search(domain)
+            existing_template_ids = task.phase_approval_ids.mapped('sign_template_id.id')
+
+            for template in templates:
+                if template.id not in existing_template_ids:
+                    self.env['engineering.task.phase.approval'].create({
+                        'task_id': task.id,
+                        'sign_template_id': template.id,
+                    })
+
+    def action_generate_phases_approvals_pdf(self):
+        self.ensure_one()
+        required_approvals = self.phase_approval_ids.filtered(lambda c: c.is_required)
+        if not required_approvals:
+            raise UserError(_("Please mark at least one phases approval as Required."))
+
+        self._generate_pdfs_for_lines(required_approvals)
+        return True
+
+
+    # ---------------------------------------------------------
+    # HELPER FUNCTION FOR ALL
     # ---------------------------------------------------------
     def _generate_pdfs_for_lines(self, lines):
         project = self.project_id
