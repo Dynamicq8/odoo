@@ -924,11 +924,11 @@ class ProjectTask(models.Model):
         return grouped
 
     def write(self, vals):
-        if 'stage_id' in vals or vals.get('state') in ['1_done', '03_approved']:
-            for task in self:
-                if task.is_disabled:
-                    raise UserError(_("لا يمكنك إنجاز هذه المهمة أو تغيير حالتها لأنها مقفلة! يرجى الانتهاء من المهام السابقة أولاً."))
-
+    if 'stage_id' in vals or vals.get('state') in ['1_done', '03_approved']:
+        for task in self:
+            # Only block main workflow tasks. Subtasks (parent_id set) are always free.
+            if task.is_disabled and task.workflow_step and not task.parent_id and vals.get('is_disabled') is not False:
+                raise UserError(_("لا يمكنك إنجاز هذه المهمة أو تغيير حالتها لأنها مقفلة! يرجى الانتهاء من المهام السابقة أولاً."))
         res = super(ProjectTask, self).write(vals)
 
         for task in self:

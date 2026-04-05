@@ -564,9 +564,6 @@ class ProjectProject(models.Model):
 # ==============================================================================
 #  PROJECT TASK MODEL
 # ==============================================================================
-# ==============================================================================
-#  PROJECT TASK MODEL
-# ==============================================================================
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
@@ -577,19 +574,11 @@ class ProjectTask(models.Model):
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def write(self, vals):
-        if 'stage_id' in vals or 'state' in vals:
-            for task in self:
-                # Allow 'write' operations on the task if it's not disabled,
-                # OR if it's already approved, regardless of the 'is_disabled' flag.
-                # This specifically allows actions like signing on approved subtasks.
-                # The 'is_disabled' check remains for *unapproved* tasks.
-                if task.is_disabled and task.state != '03_approved' and vals.get('is_disabled') is not False: 
-                    raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
-                
-                # Special condition to prevent changing 'state' back from '03_approved' if disabled
-                if task.is_disabled and task.state == '03_approved' and vals.get('state') and vals.get('state') != '03_approved':
-                    raise UserError(_("لا يمكنك تغيير حالة مهمة معتمدة ومقفلة."))
-
+    if 'stage_id' in vals or 'state' in vals:
+        for task in self:
+            # Only block main workflow tasks. Subtasks (parent_id set) are always free.
+            if task.is_disabled and task.workflow_step and not task.parent_id and vals.get('is_disabled') is not False:
+                raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
 
         res = super(ProjectTask, self).write(vals)
         
@@ -599,7 +588,6 @@ class ProjectTask(models.Model):
                     task.project_id._trigger_next_workflow_step()
                     
         return res
-
 
     def action_view_parent_project(self):
         self.ensure_one()
