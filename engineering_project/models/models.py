@@ -1089,20 +1089,7 @@ class IrAttachment(models.Model):
         }
 
 
-# ==============================================================================
-#  GOVERNORATE AND REGION MODELS
-# ==============================================================================
-class KuwaitGovernorate(models.Model):
-    _name = 'kuwait.governorate'
-    _description = 'Kuwait Governorate'
-    name = fields.Char(string='المحافظة', required=True)
 
-
-class KuwaitRegion(models.Model):
-    _name = 'kuwait.region'
-    _description = 'Kuwait Region'
-    name = fields.Char(string='المنطقة', required=True)
-    governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة", required=True)
 
 
 class ProjectTaskPhase(models.Model):
