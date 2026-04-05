@@ -328,6 +328,14 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    # ADD THIS NEW FIELD
+    parent_task_name = fields.Char(
+        string="Parent Task Name",
+        related='parent_id.name',
+        store=True, 
+        readonly=True
+    )
+
     commitment_ids = fields.One2many(
         'engineering.task.commitment',
         'task_id',
@@ -579,4 +587,3 @@ class ProjectTask(models.Model):
                 'view_mode': 'form',
                 'target': 'current',
             }
-
