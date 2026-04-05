@@ -574,11 +574,10 @@ class ProjectTask(models.Model):
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
 
     def write(self, vals):
-    if 'stage_id' in vals or 'state' in vals:
-        for task in self:
-            # Only block main workflow tasks. Subtasks (parent_id set) are always free.
-            if task.is_disabled and task.workflow_step and not task.parent_id and vals.get('is_disabled') is not False:
-                raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
+        if 'stage_id' in vals or 'state' in vals:
+            for task in self:
+                if task.is_disabled and vals.get('is_disabled') is not False:
+                    raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
 
         res = super(ProjectTask, self).write(vals)
         
