@@ -42,13 +42,17 @@
                 <!-- Ensure state is loaded in the tree so the condition works -->
                 <field name="state" invisible="1"/>
                 
-                <!-- Quick Sign Button -->
+                <!-- Ensure parent_id and its name are loaded in the tree for the condition -->
+                <field name="parent_id" invisible="1"/> 
+                <field name="parent_id.name" invisible="1"/> 
+                
+                <!-- Quick Sign Button: Visible only if state is '03_approved' AND parent task name is '2- الإشراف على التنفيذ' -->
                 <button name="action_quick_sign_phase" 
                         type="object" 
                         string="إثبات المرحلة" 
                         class="btn-success" 
                         icon="fa-pencil-square-o"
-                        invisible="state != '03_approved'"/>
+                        invisible="state != '03_approved' or parent_id.name != '2- الإشراف على التنفيذ'"/>
             </xpath>
 
 
