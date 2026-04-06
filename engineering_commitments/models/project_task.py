@@ -183,28 +183,39 @@ class ProjectProject(models.Model):
     )
 
     def _get_sign_template_domain(self, doc_type):
-        """ Helper method to build the exact search domain for templates """
         domain = [('document_type', '=', doc_type)]
 
-        # 1. Building Type
+        # === Resolve source of truth ===
+        # Try project first, fallback to sale order
+        sale_order = getattr(self, 'sale_order_id', False)
+
         building_type = getattr(self, 'building_type', False)
+        if not building_type and sale_order:
+            building_type = getattr(sale_order, 'building_type', False)
+
+        service_type = getattr(self, 'service_type', False)
+        if not service_type and sale_order:
+            service_type = getattr(sale_order, 'service_type', False)
+
+        pack = getattr(self, 'engineering_package_id', False)
+        if not pack and sale_order:
+            pack = getattr(sale_order, 'engineering_package_id', False)
+
+        # === Build domain ===
+
+        # 1. Building Type
         if building_type:
             domain.append(('building_type', 'in', [building_type, 'all']))
         else:
             domain.append(('building_type', '=', 'all'))
 
         # 2. Service Type
-        service_type = getattr(self, 'service_type', False)
         if service_type:
             domain.append(('service_type', 'in', [service_type, 'all']))
         else:
             domain.append(('service_type', '=', 'all'))
 
-        # 3. Package Check (Fetches securely from Sale Order if missing on project)
-        pack = getattr(self, 'engineering_package_id', False)
-        if not pack and getattr(self, 'sale_order_id', False):
-            pack = getattr(self.sale_order_id, 'engineering_package_id', False)
-
+        # 3. Package
         if pack:
             domain.extend(['|', ('package_id', '=', False), ('package_id', '=', pack.id)])
         else:
