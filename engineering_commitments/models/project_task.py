@@ -292,14 +292,16 @@ class ProjectProject(models.Model):
             raw_gov_name = project.governorate_id.name if getattr(project, 'governorate_id', False) else ''
             clean_gov_name = raw_gov_name.replace('محافظة', '').replace('محافظه', '').strip()
 
+            # We added spaces (`"          "`) before the required fields to naturally shift them to the right on the PDF.
+            # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
-                'name': project.partner_id.name or '',
+                'name': f"          {project.partner_id.name or ''}",
                 'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-                'governorate': clean_gov_name,
-                'region': project.region_id.name if getattr(project, 'region_id', False) else '',
-                'block': getattr(project, 'block_no', ''),
-                'plot': getattr(project, 'plot_no', ''),
-                'area': str(project_area) if project_area else '', # <--- ADDED AREA HERE
+                'governorate': f"          {clean_gov_name}",
+                'region': f"          {project.region_id.name if getattr(project, 'region_id', False) else ''}",
+                'block': f"          {getattr(project, 'block_no', '')}",
+                'plot': f"          {getattr(project, 'plot_no', '')}",
+                'area': str(project_area) if project_area else '', 
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }
@@ -532,14 +534,16 @@ class ProjectTask(models.Model):
             raw_gov_name = project.governorate_id.name if getattr(project, 'governorate_id', False) else ''
             clean_gov_name = raw_gov_name.replace('محافظة', '').replace('محافظه', '').strip()
 
+            # We added spaces (`"          "`) before the required fields to naturally shift them to the right on the PDF.
+            # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
-                'name': project.partner_id.name or '',
+                'name': f"          {project.partner_id.name or ''}",
                 'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
-                'governorate': clean_gov_name,
-                'region': project.region_id.name if getattr(project, 'region_id', False) else '',
-                'block': getattr(project, 'block_no', ''),
-                'plot': getattr(project, 'plot_no', ''),
-                'area': str(project_area) if project_area else '', # <--- ADDED AREA HERE
+                'governorate': f"          {clean_gov_name}",
+                'region': f"          {project.region_id.name if getattr(project, 'region_id', False) else ''}",
+                'block': f"          {getattr(project, 'block_no', '')}",
+                'plot': f"          {getattr(project, 'plot_no', '')}",
+                'area': str(project_area) if project_area else '', 
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }
@@ -560,6 +564,7 @@ class ProjectTask(models.Model):
                                 'value': value,
                         })
             line.sign_request_id = sign_request.id
+
     def action_quick_sign_phase(self):
         self.ensure_one()
         
