@@ -49,31 +49,41 @@
                 </div>
             </div>
 
-            <!-- ADD THIS BLOCK FOR PACKAGE FEATURES OR DESCRIPTION -->
-            
-            <!-- Check if Features has a value -->
-            <t t-if="sale_order.package_features_html and sale_order.package_features_html != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
-                <div class="row mt-4 mb-4" id="package_features_section">
-                    <div class="col-12">
-                        <h5 class="mb-3 text-primary">مميزات الباقة (Package Features)</h5>
-                        <hr/>
-                        <div t-field="sale_order.package_features_html"/>
+            <!-- PACKAGE FEATURES OR DESCRIPTION BLOCK -->
+            <t t-if="sale_order.engineering_package_id">
+                
+                <!-- 1. Check if Features exist on the Package -->
+                <t t-if="sale_order.engineering_package_id.feature_ids">
+                    <div class="row mt-4 mb-4" id="package_features_section">
+                        <div class="col-12">
+                            <h5 class="mb-3 text-primary">مميزات الباقة (Package Features)</h5>
+                            <hr/>
+                            <ul class="list-group" style="max-width: 600px;">
+                                <t t-foreach="sale_order.engineering_package_id.feature_ids" t-as="feature">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span t-out="feature.name"/>
+                                        <i t-if="feature.included" class="fa fa-check text-success"/>
+                                        <i t-if="not feature.included" class="fa fa-times text-danger"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-            </t>
-            
-            <!-- If Features is empty, check if Description has a value -->
-            <t t-elif="sale_order.package_description_html and sale_order.package_description_html != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
-                <div class="row mt-4 mb-4" id="package_description_section">
-                    <div class="col-12">
-                        <h5 class="mb-3 text-primary">تفاصيل الباقة (Package Details)</h5>
-                        <hr/>
-                        <div t-field="sale_order.package_description_html"/>
+                </t>
+                
+                <!-- 2. If Features are empty, check if Description exists -->
+                <t t-elif="sale_order.engineering_package_id.description and sale_order.engineering_package_id.description != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
+                    <div class="row mt-4 mb-4" id="package_description_section">
+                        <div class="col-12">
+                            <h5 class="mb-3 text-primary">تفاصيل الباقة (Package Details)</h5>
+                            <hr/>
+                            <div t-field="sale_order.engineering_package_id.description"/>
+                        </div>
                     </div>
-                </div>
+                </t>
+
             </t>
-            
-            <!-- END PACKAGE FEATURES OR DESCRIPTION BLOCK -->
+            <!-- END PACKAGE BLOCK -->
 
         </xpath>
     </template>
