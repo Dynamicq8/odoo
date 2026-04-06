@@ -52,6 +52,9 @@ class EngineeringProjectCompanyContract(models.Model):
     sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+    def action_send_whatsapp(self):
+        # Assuming you have the helper function _action_send_whatsapp_direct available
+        return _action_send_whatsapp_direct(self)
 
     def action_sign_now(self):
         self.ensure_one()
