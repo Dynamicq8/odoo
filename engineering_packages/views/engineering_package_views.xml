@@ -22,6 +22,7 @@
                             <field name="code"/>
                             <field name="package_type"/>
                             <field name="building_type"/>
+                            <field name="service_type"/> <!-- Added service_type here -->
                             <field name="sequence"/>
                             <field name="active"/>
                         </group>
@@ -73,6 +74,7 @@
                 <field name="name"/>
                 <field name="package_type"/>
                 <field name="building_type"/>
+                <field name="service_type"/> <!-- Added service_type here -->
                 <field name="list_price"/>
                 <field name="active"/>
             </tree>
@@ -127,9 +129,21 @@
                 <filter string="سكن خاص" name="residential" domain="[('building_type', '=', 'residential')]"/>
                 <filter string="استثماري" name="investment" domain="[('building_type', '=', 'investment')]"/>
                 <filter string="تجاري" name="commercial" domain="[('building_type', '=', 'commercial')]"/>
+                <separator/>
+                <!-- Added Service Type Filters -->
+                <filter string="بناء جديد" name="new_construction" domain="[('service_type', '=', 'new_construction')]"/>
+                <filter string="هدم" name="demolition" domain="[('service_type', '=', 'demolition')]"/>
+                <filter string="تعديل" name="modification" domain="[('service_type', '=', 'modification')]"/>
+                <filter string="اضافة" name="addition" domain="[('service_type', '=', 'addition')]"/>
+                <filter string="تعديل واضافة" name="addition_modification" domain="[('service_type', '=', 'addition_modification')]"/>
+                <filter string="إشراف هندسي فقط" name="supervision_only" domain="[('service_type', '=', 'supervision_only')]"/>
+                <filter string="ترميم" name="renovation" domain="[('service_type', '=', 'renovation')]"/>
+                <filter string="قواطع داخلية" name="internal_partitions" domain="[('service_type', '=', 'internal_partitions')]"/>
+                <filter string="مظلات / حدائق" name="shades_garden" domain="[('service_type', '=', 'shades_garden')]"/>
                 <group expand="0" string="Group By">
                     <filter string="نوع الباقة" name="group_type" context="{'group_by': 'package_type'}"/>
                     <filter string="نوع المبنى" name="group_building" context="{'group_by': 'building_type'}"/>
+                    <filter string="نوع الخدمة" name="group_service" context="{'group_by': 'service_type'}"/> <!-- Added group by for service type -->
                 </group>
             </search>
         </field>

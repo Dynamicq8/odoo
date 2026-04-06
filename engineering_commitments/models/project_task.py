@@ -296,7 +296,7 @@ class ProjectProject(models.Model):
             # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
                 'name': f"          {project.partner_id.name or ''}",
-                'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
+                'date': fields.Date.context_today(self).strftime("%Y%m%d"),
                 'governorate': f"          {clean_gov_name}",
                 'region': f"          {project.region_id.name if getattr(project, 'region_id', False) else ''}",
                 'block': f"          {getattr(project, 'block_no', '')}",
@@ -538,7 +538,7 @@ class ProjectTask(models.Model):
             # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
                 'name': f"          {project.partner_id.name or ''}",
-                'date': fields.Date.context_today(self).strftime("%Y/%m/%d"),
+                'date': fields.Date.context_today(self).strftime("%Y%m%d"),
                 'governorate': f"          {clean_gov_name}",
                 'region': f"          {project.region_id.name if getattr(project, 'region_id', False) else ''}",
                 'block': f"          {getattr(project, 'block_no', '')}",

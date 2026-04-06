@@ -29,6 +29,20 @@ class EngineeringPackage(models.Model):
         ('all', 'جميع الأنواع (All Types)'),
     ], string="نوع المبنى (Building Type)", default='all')
 
+    # Service Type Applicability
+    service_type = fields.Selection([
+        ('new_construction', 'بناء جديد (New Construction)'), 
+        ('demolition', 'هدم (Demolition)'), 
+        ('modification', 'تعديل (Modification)'), 
+        ('addition', 'اضافة (Addition)'), 
+        ('addition_modification', 'تعديل واضافة (Addition & Modification)'), 
+        ('supervision_only', 'إشراف هندسي فقط (Supervision Only)'), 
+        ('renovation', 'ترميم (Renovation)'), 
+        ('internal_partitions', 'قواطع داخلية (Internal Partitions)'), 
+        ('shades_garden', 'مظلات / حدائق (Shades / Garden)'),
+        ('all', 'جميع الأنواع (All Types)') 
+    ], string="نوع الخدمة (Service Type)", default='all')
+
     # Package Description
     description = fields.Html(string='الوصف (Description)')
     
