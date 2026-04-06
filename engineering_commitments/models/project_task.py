@@ -222,41 +222,29 @@ class ProjectProject(models.Model):
     )
 
     def _get_sign_template_domain(self, doc_type):
-        """
-        Build the search domain for sign templates.
-        Resolves building_type, service_type, and package
-        from the project itself first, then falls back to
-        the linked sale order if not set on the project.
-        """
         domain = [('document_type', '=', doc_type)]
 
-        # --- Resolve Sale Order fallback ---
-        sale_order = getattr(self, 'sale_order_id', False)
+        building_type = self.building_type or False
+        service_type = self.service_type or False
+        pack = self.engineering_package_id if hasattr(self, 'engineering_package_id') else False
 
-        # 1. Building Type
-        building_type = getattr(self, 'building_type', False)
-        if not building_type and sale_order:
-            building_type = getattr(sale_order, 'building_type', False)
+        # Fallback to sale order if somehow not on project
+        if not building_type and self.sale_order_id:
+            building_type = self.sale_order_id.building_type
+        if not service_type and self.sale_order_id:
+            service_type = self.sale_order_id.service_type
+        if not pack and self.sale_order_id:
+            pack = getattr(self.sale_order_id, 'engineering_package_id', False)
 
         if building_type:
             domain.append(('building_type', 'in', [building_type, 'all']))
         else:
             domain.append(('building_type', '=', 'all'))
 
-        # 2. Service Type
-        service_type = getattr(self, 'service_type', False)
-        if not service_type and sale_order:
-            service_type = getattr(sale_order, 'service_type', False)
-
         if service_type:
             domain.append(('service_type', 'in', [service_type, 'all']))
         else:
             domain.append(('service_type', '=', 'all'))
-
-        # 3. Package
-        pack = getattr(self, 'engineering_package_id', False)
-        if not pack and sale_order:
-            pack = getattr(sale_order, 'engineering_package_id', False)
 
         if pack:
             domain.extend(['|', ('package_id', '=', False), ('package_id', '=', pack.id)])

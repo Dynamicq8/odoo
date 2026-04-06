@@ -282,6 +282,8 @@ class SaleOrder(models.Model):
             'governorate_id': self.governorate_id.id,
             'region_id': self.region_id.id,
             'electricity_receipt': self.electricity_receipt, 
+            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,  # <-- ADD THIS
+
         }
         project = self.env['project.project'].create(project_vals)
 
