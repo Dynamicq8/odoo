@@ -72,6 +72,102 @@ def _action_sign_now_direct(self):
     }
 
 
+def _action_send_whatsapp_direct(self):
+    """
+    Build a WhatsApp URL containing the signing link and open it in a new tab.
+    The phone number is read from the customer (partner_id) on the linked
+    project or task.  Falls back to the current user's partner phone if the
+    customer has no mobile/phone set.
+
+    Priority for phone: partner.mobile → partner.phone → current user mobile/phone
+    """
+    self.ensure_one()
+    if not self.sign_request_id:
+        raise UserError(_("لا يوجد مستند محدد بعد. يرجى توليد PDF أولاً.\n(No document generated yet. Please generate the PDF first.)"))
+
+    request = self.sign_request_id
+
+    # ------------------------------------------------------------------ #
+    # 1.  Resolve the customer partner from project_id or task_id
+    # ------------------------------------------------------------------ #
+    partner = None
+
+    if hasattr(self, 'project_id') and self.project_id:
+        partner = self.project_id.partner_id
+    elif hasattr(self, 'task_id') and self.task_id:
+        partner = self.task_id.project_id.partner_id
+
+    if not partner:
+        partner = self.env.user.partner_id
+
+    # ------------------------------------------------------------------ #
+    # 2.  Get phone number  (mobile preferred over phone)
+    # ------------------------------------------------------------------ #
+    phone = (partner.mobile or partner.phone or '').strip()
+
+    if not phone:
+        # Last resort: current user
+        phone = (self.env.user.partner_id.mobile or self.env.user.partner_id.phone or '').strip()
+
+    if not phone:
+        raise UserError(_(
+            "لا يوجد رقم هاتف مسجل للعميل.\n"
+            "Please set a mobile/phone number on the customer record before sending via WhatsApp."
+        ))
+
+    # ------------------------------------------------------------------ #
+    # 3.  Normalise phone to international format
+    #     Strips spaces, dashes, parentheses.
+    #     If number starts with 0, replace leading 0 with country code 965
+    #     (Kuwait default – adjust as needed).
+    # ------------------------------------------------------------------ #
+    import re
+    phone_clean = re.sub(r'[\s\-\(\)]+', '', phone)
+    if phone_clean.startswith('00'):
+        phone_clean = '+' + phone_clean[2:]
+    elif phone_clean.startswith('0'):
+        phone_clean = '965' + phone_clean[1:]      # ← change 965 to your country code if needed
+    phone_clean = phone_clean.lstrip('+')           # wa.me does not want the leading +
+
+    # ------------------------------------------------------------------ #
+    # 4.  Build the signing URL
+    #     We look for the signer item matching the customer partner first;
+    #     if not found we fall back to the first available item.
+    # ------------------------------------------------------------------ #
+    request_item = request.request_item_ids.filtered(
+        lambda r: r.partner_id.id == partner.id
+    )
+    if not request_item:
+        request_item = request.request_item_ids[:1]
+
+    if not request_item:
+        raise UserError(_("No signer found on this sign request."))
+
+    base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '').rstrip('/')
+    sign_url = f"{base_url}/sign/document/{request.id}/{request_item[0].access_token}"
+
+    # ------------------------------------------------------------------ #
+    # 5.  Compose WhatsApp message
+    # ------------------------------------------------------------------ #
+    doc_name = request.reference or self.sign_template_id.name or _("المستند")
+    message = (
+        f"مرحباً {partner.name}،\n\n"
+        f"يرجى مراجعة وتوقيع المستند التالي:\n"
+        f"📄 {doc_name}\n\n"
+        f"🔗 رابط التوقيع:\n{sign_url}\n\n"
+        f"شكراً لتعاملكم معنا."
+    )
+
+    import urllib.parse
+    whatsapp_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+
+    return {
+        'type': 'ir.actions.act_url',
+        'url': whatsapp_url,
+        'target': 'new',
+    }
+
+
 # =========================================================
 # 2. SUPPORTING MODELS
 # =========================================================
@@ -113,6 +209,9 @@ class EngineeringProjectCompanyContract(models.Model):
     def action_sign_now(self):
         return _action_sign_now_direct(self)
 
+    def action_send_whatsapp(self):
+        return _action_send_whatsapp_direct(self)
+
 
 class EngineeringTaskCompanyContract(models.Model):
     _name = 'engineering.task.company.contract'
@@ -125,6 +224,9 @@ class EngineeringTaskCompanyContract(models.Model):
 
     def action_sign_now(self):
         return _action_sign_now_direct(self)
+
+    def action_send_whatsapp(self):
+        return _action_send_whatsapp_direct(self)
 
 
 class EngineeringProjectPhaseApproval(models.Model):

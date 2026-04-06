@@ -38,22 +38,21 @@
             <!-- ======================================================== -->
             <!-- NEW: ADD BUTTON TO SUBTASKS LIST (Beside View & Delete)  -->
             <!-- ======================================================== -->
-            <!-- Inside project_task_view_form_inherit_documents -->
-<xpath expr="//field[@name='child_ids']/tree" position="inside">
-    <!-- Ensure state is loaded in the tree so the condition works -->
-    <field name="state" invisible="1"/>
-    
-    <!-- We need the related field you created in Python -->
-    <field name="parent_task_name" invisible="1"/> 
-    
-    <!-- Quick Sign Button: Visible only if state is '03_approved' AND parent task name is '2- الإشراف على التنفيذ' -->
-    <button name="action_quick_sign_phase" 
-            type="object" 
-            string="إثبات المرحلة" 
-            class="btn-success" 
-            icon="fa-pencil-square-o"
-            invisible="state != '03_approved' or parent_task_name != '2- الإشراف على التنفيذ'"/>
-</xpath>
+            <xpath expr="//field[@name='child_ids']/tree" position="inside">
+                <!-- Ensure state is loaded in the tree so the condition works -->
+                <field name="state" invisible="1"/>
+
+                <!-- We need the related field you created in Python -->
+                <field name="parent_task_name" invisible="1"/>
+
+                <!-- Quick Sign Button: Visible only if state is '03_approved' AND parent task name is '2- الإشراف على التنفيذ' -->
+                <button name="action_quick_sign_phase"
+                        type="object"
+                        string="إثبات المرحلة"
+                        class="btn-success"
+                        icon="fa-pencil-square-o"
+                        invisible="state != '03_approved' or parent_task_name != '2- الإشراف على التنفيذ'"/>
+            </xpath>
 
 
             <xpath expr="//notebook" position="inside">
@@ -95,7 +94,6 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="Sign Now"
@@ -120,7 +118,6 @@
                                'nra_1_5',
                                'nra_3_7',
                                'dem_1_2',
-
                           ]
                       ">
 
@@ -148,11 +145,18 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="Sign Now"
                                     class="btn-primary"
+                                    invisible="not sign_request_id"/>
+
+                            <!-- NEW: WhatsApp Send Button -->
+                            <button name="action_send_whatsapp"
+                                    type="object"
+                                    string="WhatsApp"
+                                    class="btn-success"
+                                    icon="fa-whatsapp"
                                     invisible="not sign_request_id"/>
                         </tree>
                     </field>
@@ -161,17 +165,14 @@
                 <!-- PHASES APPROVALS tab (Subtasks & Supervision) -->
                 <page string="Phases Approvals (اعتماد المراحل)"
                       name="engineering_phases_approvals"
-                      invisible="not parent_id"> <!-- Visible ONLY on Subtasks -->
+                      invisible="not parent_id">
 
-                    <!-- Ensure state field is loaded in view so invisible conditions work properly -->
                     <field name="state" invisible="1"/>
 
-                    <!-- Warning shown when Subtask is NOT approved yet -->
                     <div class="alert alert-info" role="alert" invisible="state == '03_approved'">
                         <i class="fa fa-info-circle"/> يجب الموافقة على هذه المرحلة (Approved) أولاً لتتمكن من إثبات واعتماد المستندات.
                     </div>
 
-                    <!-- Document loading shown ONLY when Subtask IS approved -->
                     <div class="mb-3" invisible="state != '03_approved'">
                         <button name="action_load_phases_approvals"
                                 type="object"
@@ -186,7 +187,6 @@
                                 icon="fa-file-pdf-o"/>
                     </div>
 
-                    <!-- The Sign Form shown ONLY when Subtask IS approved -->
                     <field name="phase_approval_ids" invisible="state != '03_approved'">
                         <tree editable="bottom">
                             <field name="sign_template_id"
@@ -197,7 +197,6 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="إثبات (Sign Now)"
@@ -250,7 +249,6 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="Sign Now"
@@ -286,11 +284,18 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="Sign Now"
                                     class="btn-primary"
+                                    invisible="not sign_request_id"/>
+
+                            <!-- NEW: WhatsApp Send Button -->
+                            <button name="action_send_whatsapp"
+                                    type="object"
+                                    string="WhatsApp"
+                                    class="btn-success"
+                                    icon="fa-whatsapp"
                                     invisible="not sign_request_id"/>
                         </tree>
                     </field>
@@ -322,7 +327,6 @@
 
                             <field name="sign_request_id" readonly="1"/>
 
-                            <!-- FIXED for Odoo 17: removed attrs -->
                             <button name="action_sign_now"
                                     type="object"
                                     string="إثبات (Sign Now)"
