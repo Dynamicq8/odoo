@@ -421,6 +421,8 @@ class SaleOrder(models.Model):
             'governorate_id': gov_id.id if gov_id else False,
             'region_id': reg_id.id if reg_id else False,
             'electricity_receipt': elec,
+            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,  # <-- ADD THIS
+
         }
         project = self.env['project.project'].create(project_vals)
         project._get_project_stages_map()
