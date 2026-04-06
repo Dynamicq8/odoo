@@ -111,12 +111,16 @@
                       invisible="
                           not is_paperwork_task
                           or workflow_step not in [
-                              'rn_1_4',
-                              'nrn_1_4',
-                              'ra_3_1',
-                              'nra_1_4',
-                              'dem_1_3',
-                              'rn_1_3',
+                               'rn_1_3',
+                               'rn_3_3',
+                               'nrn_1_3',
+                               'nrn_3_7',
+                               'ra_1_5',
+                               'ra_3_3',
+                               'nra_1_5',
+                               'nra_3_7',
+                               'dem_1_2',
+
                           ]
                       ">
 

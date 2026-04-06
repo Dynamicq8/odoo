@@ -15,7 +15,7 @@ class SignTemplate(models.Model):
     document_type = fields.Selection([
         ('commitment', 'تعهد هندسي (Engineering Commitment)'),
         ('company_contract', 'عقد شركة (Company Contract)'),
-        ('phases_approval', 'اعتماد المراحل (Phases Approval)'),  # <--- ADDED PHASES APPROVAL HERE
+        ('phases_approval', 'اعتماد المراحل (Phases Approval)'),
         ('none', 'غير محدد (None)')
     ], string="Document Type (نوع المستند)", default='none', 
        help="Choose whether this is an Engineering Commitment, Company Contract, or Phases Approval.")
@@ -52,6 +52,37 @@ class SignTemplate(models.Model):
 # =========================================================
 # 2. SUPPORTING MODELS FOR COMPANY CONTRACTS & PHASES APPROVALS
 # =========================================================
+# --- COMMITMENTS (Added action_sign_now for direct sign) ---
+class EngineeringProjectCommitment(models.Model):
+    _name = 'engineering.project.commitment'
+    _description = 'Engineering Project Commitment Line'
+
+    project_id = fields.Many2one('project.project', string='Project', ondelete='cascade')
+    sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
+    is_required = fields.Boolean(string='Required', default=False)
+    sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
+
+class EngineeringTaskCommitment(models.Model):
+    _name = 'engineering.task.commitment'
+    _description = 'Engineering Task Commitment Line'
+
+    task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
+    sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
+    is_required = fields.Boolean(string='Required', default=False)
+    sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
+
+
+# --- COMPANY CONTRACTS ---
 class EngineeringProjectCompanyContract(models.Model):
     _name = 'engineering.project.company.contract'
     _description = 'Engineering Project Company Contract Line'
@@ -60,6 +91,11 @@ class EngineeringProjectCompanyContract(models.Model):
     sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
 
 
 class EngineeringTaskCompanyContract(models.Model):
@@ -71,8 +107,13 @@ class EngineeringTaskCompanyContract(models.Model):
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
 
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
 
-# --- NEW SUPPORTING MODELS FOR PHASES APPROVAL ---
+
+# --- PHASES APPROVAL ---
 class EngineeringProjectPhaseApproval(models.Model):
     _name = 'engineering.project.phase.approval'
     _description = 'Engineering Project Phase Approval Line'
@@ -81,6 +122,11 @@ class EngineeringProjectPhaseApproval(models.Model):
     sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
 
 
 class EngineeringTaskPhaseApproval(models.Model):
@@ -91,6 +137,11 @@ class EngineeringTaskPhaseApproval(models.Model):
     sign_template_id = fields.Many2one('sign.template', string='Template', required=True)
     is_required = fields.Boolean(string='Required', default=False)
     sign_request_id = fields.Many2one('sign.request', string='Sign Request')
+
+    def action_sign_now(self):
+        self.ensure_one()
+        if self.sign_request_id:
+            return self.sign_request_id.go_to_document()
 
 
 # =========================================================
@@ -106,42 +157,53 @@ class ProjectProject(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.project.company.contract', # <--- FIXED: Added '.company'
+        'engineering.project.company.contract',
         'project_id',
         string='Company Contracts (عقود الشركة)'
     )
 
     phase_approval_ids = fields.One2many(
-        'engineering.project.phase.approval', # <--- NEW FIELD
+        'engineering.project.phase.approval', 
         'project_id',
         string='Phases Approvals (اعتماد المراحل)'
     )
+
+    def _get_sign_template_domain(self, doc_type):
+        """ Helper method to build the exact search domain for templates """
+        domain = [('document_type', '=', doc_type)]
+
+        # 1. Building Type
+        building_type = getattr(self, 'building_type', False)
+        if building_type:
+            domain.append(('building_type', 'in', [building_type, 'all']))
+        else:
+            domain.append(('building_type', '=', 'all'))
+
+        # 2. Service Type
+        service_type = getattr(self, 'service_type', False)
+        if service_type:
+            domain.append(('service_type', 'in', [service_type, 'all']))
+        else:
+            domain.append(('service_type', '=', 'all'))
+
+        # 3. Package Check (Fetches securely from Sale Order if missing on project)
+        pack = getattr(self, 'engineering_package_id', False)
+        if not pack and getattr(self, 'sale_order_id', False):
+            pack = getattr(self.sale_order_id, 'engineering_package_id', False)
+
+        if pack:
+            domain.extend(['|', ('package_id', '=', False), ('package_id', '=', pack.id)])
+        else:
+            domain.append(('package_id', '=', False))
+
+        return domain
 
     # ---------------------------------------------------------
     # COMMITMENTS FUNCTIONS
     # ---------------------------------------------------------
     def action_load_commitments(self):
         for project in self:
-            domain = [('document_type', '=', 'commitment')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = project._get_sign_template_domain('commitment')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = project.commitment_ids.mapped('sign_template_id.id')
 
@@ -166,26 +228,7 @@ class ProjectProject(models.Model):
     # ---------------------------------------------------------
     def action_load_company_contracts(self):
         for project in self:
-            domain = [('document_type', '=', 'company_contract')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = project._get_sign_template_domain('company_contract')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = project.company_contract_ids.mapped('sign_template_id.id')
 
@@ -206,30 +249,11 @@ class ProjectProject(models.Model):
         return True
 
     # ---------------------------------------------------------
-    # PHASES APPROVAL FUNCTIONS (NEW)
+    # PHASES APPROVAL FUNCTIONS
     # ---------------------------------------------------------
     def action_load_phases_approvals(self):
         for project in self:
-            domain = [('document_type', '=', 'phases_approval')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = project._get_sign_template_domain('phases_approval')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = project.phase_approval_ids.mapped('sign_template_id.id')
 
@@ -285,15 +309,10 @@ class ProjectProject(models.Model):
                 'request_item_ids': signers,
             })
             
-            # Extract area safely, handle if empty/false/0
             project_area = getattr(project, 'area', False)
-            
-            # Clean up Governorate name to remove "محافظه" or "محافظة"
             raw_gov_name = project.governorate_id.name if getattr(project, 'governorate_id', False) else ''
             clean_gov_name = raw_gov_name.replace('محافظة', '').replace('محافظه', '').strip()
 
-            # We added spaces (`"          "`) before the required fields to naturally shift them to the right on the PDF.
-            # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
                 'name': f"          {project.partner_id.name or ''}",
                 'date': fields.Date.context_today(self).strftime("%Y%m%d"),
@@ -330,7 +349,6 @@ class ProjectProject(models.Model):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
-    # ADD THIS NEW FIELD
     parent_task_name = fields.Char(
         string="Parent Task Name",
         related='parent_id.name',
@@ -345,13 +363,13 @@ class ProjectTask(models.Model):
     )
 
     company_contract_ids = fields.One2many(
-        'engineering.task.company.contract', # <--- FIXED: Added '.company'
+        'engineering.task.company.contract',
         'task_id',
         string='Company Contracts (عقود الشركة)'
     )
 
     phase_approval_ids = fields.One2many(
-        'engineering.task.phase.approval', # <--- NEW FIELD
+        'engineering.task.phase.approval', 
         'task_id',
         string='Phases Approvals (اعتماد المراحل)'
     )
@@ -361,27 +379,7 @@ class ProjectTask(models.Model):
     # ---------------------------------------------------------
     def action_load_commitments(self):
         for task in self:
-            project = task.project_id
-            domain = [('document_type', '=', 'commitment')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = task.project_id._get_sign_template_domain('commitment')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = task.commitment_ids.mapped('sign_template_id.id')
 
@@ -406,27 +404,7 @@ class ProjectTask(models.Model):
     # ---------------------------------------------------------
     def action_load_company_contracts(self):
         for task in self:
-            project = task.project_id
-            domain = [('document_type', '=', 'company_contract')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = task.project_id._get_sign_template_domain('company_contract')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = task.company_contract_ids.mapped('sign_template_id.id')
 
@@ -447,31 +425,11 @@ class ProjectTask(models.Model):
         return True
 
     # ---------------------------------------------------------
-    # PHASES APPROVAL FUNCTIONS (NEW)
+    # PHASES APPROVAL FUNCTIONS
     # ---------------------------------------------------------
     def action_load_phases_approvals(self):
         for task in self:
-            project = task.project_id
-            domain = [('document_type', '=', 'phases_approval')]
-
-            building_type = getattr(project, 'building_type', False)
-            if building_type:
-                domain.append(('building_type', 'in', [building_type, 'all']))
-            else:
-                domain.append(('building_type', '=', 'all'))
-
-            service_type = getattr(project, 'service_type', False)
-            if service_type:
-                domain.append(('service_type', 'in', [service_type, 'all']))
-            else:
-                domain.append(('service_type', '=', 'all'))
-
-            package_id = getattr(project, 'package_id', False)
-            if package_id:
-                domain.extend(['|', ('package_id', '=', False), ('package_id', '=', package_id.id)])
-            else:
-                domain.append(('package_id', '=', False))
-
+            domain = task.project_id._get_sign_template_domain('phases_approval')
             templates = self.env['sign.template'].search(domain)
             existing_template_ids = task.phase_approval_ids.mapped('sign_template_id.id')
 
@@ -527,15 +485,10 @@ class ProjectTask(models.Model):
                 'request_item_ids': signers,
             })
 
-            # Extract area safely, handle if empty/false/0
             project_area = getattr(project, 'area', False)
-            
-            # Clean up Governorate name to remove "محافظه" or "محافظة"
             raw_gov_name = project.governorate_id.name if getattr(project, 'governorate_id', False) else ''
             clean_gov_name = raw_gov_name.replace('محافظة', '').replace('محافظه', '').strip()
 
-            # We added spaces (`"          "`) before the required fields to naturally shift them to the right on the PDF.
-            # Reminder: Increase font size/boldness by increasing the field Box Height in the Sign Template UI!
             replacements = {
                 'name': f"          {project.partner_id.name or ''}",
                 'date': fields.Date.context_today(self).strftime("%Y%m%d"),
@@ -566,6 +519,7 @@ class ProjectTask(models.Model):
             line.sign_request_id = sign_request.id
 
     def action_quick_sign_phase(self):
+        """ Quick action from the tree view to generate and immediately jump to signing """
         self.ensure_one()
         
         # 1. Load the phase template if it isn't loaded yet
@@ -581,14 +535,8 @@ class ProjectTask(models.Model):
         if unsigned:
             self._generate_pdfs_for_lines(unsigned)
             
-        # 4. Jump straight into the Signing page window
+        # 4. Jump straight into the Signing page window directly!
         sign_request = self.phase_approval_ids.filtered(lambda p: p.sign_request_id).mapped('sign_request_id')
         if sign_request:
-            return {
-                'type': 'ir.actions.act_window',
-                'name': 'Sign Phase Document',
-                'res_model': 'sign.request',
-                'res_id': sign_request[0].id,
-                'view_mode': 'form',
-                'target': 'current',
-            }
+            # THIS is the magic line that redirects you straight to the signing canvas
+            return sign_request[0].go_to_document()

@@ -52,20 +52,41 @@
                             تحية طيبة وبعد،،،
                         </div>
 
+                        <!-- FIXED GOVERNORATE LOGIC HERE -->
                         <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; background-color: #fcfcfc;">
-    <strong>بيانات الموقع:</strong>
-    المحافظة: <span t-esc="doc.governorate_id.name.replace('محافظه', '').strip()"/> | 
-    المنطقة: <span t-field="doc.region_id.name"/> | 
-    القطعة: <span t-field="doc.block_no"/> | 
-    قسيمة: <span t-field="doc.plot_no"/> | 
-    الضاحية: <span t-field="doc.street_no"/>
-</div>
+                            <strong>بيانات الموقع:</strong>
+                            المحافظة: <span t-if="doc.governorate_id" t-esc="doc.governorate_id.name.replace('محافظة', '').replace('محافظه', '').strip()"/> | 
+                            المنطقة: <span t-field="doc.region_id.name"/> | 
+                            القطعة: <span t-field="doc.block_no"/> | 
+                            قسيمة: <span t-field="doc.plot_no"/> | 
+                            الضاحية: <span t-field="doc.street_no"/>
+                        </div>
 
-                        <!-- SERVICES LIST -->
+                        <!-- SERVICES LIST (FEATURES OR DESCRIPTION) -->
                         <div style="margin-bottom: 30px;">
                             <p>يسرنا أن نقدم لكم عرض السعر بالخدمات التالية:</p>
-                            <!-- This renders the Package Features (1, 2, 3...) -->
-                            <div t-if="doc.package_features_html" t-out="doc.package_features_html" style="margin-right: 20px;"/>
+                            
+                            <t t-if="doc.engineering_package_id">
+                                
+                                <!-- 1. Check if Features exist on the Package -->
+                                <t t-if="doc.engineering_package_id.feature_ids">
+                                    <ul style="margin-right: 20px; padding-right: 20px; list-style-type: none;">
+                                        <t t-foreach="doc.engineering_package_id.feature_ids" t-as="feature">
+                                            <li style="margin-bottom: 8px;">
+                                                <span t-if="feature.included" style="color: green; font-weight: bold;">✔</span>
+                                                <span t-if="not feature.included" style="color: red; font-weight: bold;">✖</span>
+                                                <span t-out="feature.name" style="margin-right: 8px;"/>
+                                            </li>
+                                        </t>
+                                    </ul>
+                                </t>
+                                
+                                <!-- 2. If Features are empty, check if Description exists -->
+                                <t t-elif="doc.engineering_package_id.description and doc.engineering_package_id.description != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
+                                    <div t-out="doc.engineering_package_id.description" style="margin-right: 20px;"/>
+                                </t>
+
+                            </t>
                         </div>
 
                         <!-- FINANCIAL TOTAL -->
@@ -75,15 +96,13 @@
                             (<span t-esc="doc.amount_total"/> دينار كويتي لا غير)
                         </div>
 
-                        <!-- TERMS & NOTES (Removed) -->
-                        
                         <div style="margin-top: 40px;">
                             مع خالص التحية والتقدير،،،
                             <br/><br/>
                             <strong>ديناميك ديزاين للإستشارات الهندسية</strong>
                         </div>
 
-                        <!-- FOOTER IMAGE -->
+                        <!-- FOOTER -->
                         <div class="footer" style="border-top: 1px solid black; text-align: center; font-size: 10px; padding-top: 10px;">
                             مدينة الكويت - قبلة - شارع الصالحية - مبنى رقم (18) الدور الأول مكتب رقم (1)
                             <br/>
