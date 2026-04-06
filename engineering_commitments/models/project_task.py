@@ -213,17 +213,17 @@ class ProjectProject(models.Model):
         if not pack and self.sale_order_id:
             pack = getattr(self.sale_order_id, 'engineering_package_id', False)
 
-        # 1. Building Type filter
+        # 1. Building Type filter (CRITICAL FIX: Included 'False' for older/unset templates)
         if building_type:
-            domain.append(('building_type', 'in', [building_type, 'all']))
+            domain.append(('building_type', 'in', [building_type, 'all', False]))
         else:
-            domain.append(('building_type', '=', 'all'))
+            domain.append(('building_type', 'in', ['all', False]))
 
-        # 2. Service Type filter
+        # 2. Service Type filter (CRITICAL FIX: Included 'False' for older/unset templates)
         if service_type:
-            domain.append(('service_type', 'in', [service_type, 'all']))
+            domain.append(('service_type', 'in', [service_type, 'all', False]))
         else:
-            domain.append(('service_type', '=', 'all'))
+            domain.append(('service_type', 'in', ['all', False]))
 
         # 3. Package filter
         if pack:
