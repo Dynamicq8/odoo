@@ -10,15 +10,6 @@
                 <group string="بيانات المشروع (Project Details)">
                     <field name="building_type"/>
                     <field name="service_type"/>
-                    
-                    <!-- THIS IS THE NEW POSITION FOR THE PACKAGE FIELD -->
-                    <field name="engineering_package_id" 
-                           options="{'no_create': True, 'no_open': True}"
-                           placeholder="اختر باقة هندسية..."
-                           domain="[
-                               ('building_type', 'in', [building_type, 'all']),
-                               ('service_type', 'in', [service_type, 'all'])
-                           ]"/>
                 </group>
 
                 <!-- Location Details Section -->
@@ -37,10 +28,4 @@
             </xpath>
         </field>
     </record>
-
-    <!-- 
-      IMPORTANT:
-      You can now DELETE the other record 'view_order_form_inherit_engineering_package'.
-      If it was in its own XML file, you can delete that entire file.
-    -->
 </odoo>

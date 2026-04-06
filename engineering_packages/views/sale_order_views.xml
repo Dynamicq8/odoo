@@ -4,10 +4,18 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <!-- Hidden field (no select UI) -->
-                <field name="engineering_package_id" invisible="1"/>
+            
+            <!-- This targets the "نوع الخدمة" field and puts the package exactly below it -->
+            <xpath expr="//field[@name='service_type']" position="after">
+                <field name="engineering_package_id" 
+                       options="{'no_create': True, 'no_open': True}"
+                       placeholder="اختر باقة هندسية..."
+                       domain="[
+                           ('building_type', 'in', [building_type, 'all']),
+                           ('service_type', 'in', [service_type, 'all'])
+                       ]"/>
             </xpath>
+
         </field>
     </record>
 </odoo>
