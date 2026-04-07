@@ -421,8 +421,7 @@ class SaleOrder(models.Model):
             'governorate_id': gov_id.id if gov_id else False,
             'region_id': reg_id.id if reg_id else False,
             'electricity_receipt': elec,
-            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,  # <-- ADD THIS
-
+            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,
         }
         project = self.env['project.project'].create(project_vals)
         project._get_project_stages_map()
@@ -670,8 +669,6 @@ class ProjectProject(models.Model):
 
         new_task = self.env['project.task'].create(val)
 
-        # Subtasks are NEVER blocked — no workflow_step, has parent_id,
-        # so the write() guard will not apply to them regardless of parent state.
         subtask_base_vals = {
             'project_id': self.id,
             'parent_id': new_task.id,
@@ -829,8 +826,6 @@ class ProjectTask(models.Model):
     def write(self, vals):
         if 'stage_id' in vals or vals.get('state') in ['1_done', '03_approved']:
             for task in self:
-                # Only block main workflow tasks (they have workflow_step and no parent_id).
-                # Subtasks (parent_id is set) are always free to be approved/moved.
                 if task.is_disabled and task.workflow_step and not task.parent_id and vals.get('is_disabled') is not False:
                     raise UserError(_("لا يمكنك إنجاز هذه المهمة أو تغيير حالتها لأنها مقفلة! يرجى الانتهاء من المهام السابقة أولاً."))
 
@@ -867,6 +862,10 @@ class ProjectTask(models.Model):
         }
 
     def action_send_task_form_whatsapp(self):
+        """
+        Sends the general task form PDF link via WhatsApp.
+        Uses a token-based URL so the recipient does NOT need to log in.
+        """
         self.ensure_one()
         if self.is_disabled:
             raise UserError(_("لا يمكن إرسال نموذج مهمة مقفلة."))
@@ -874,14 +873,91 @@ class ProjectTask(models.Model):
         phone = self.project_id.partner_id.mobile or self.project_id.partner_id.phone
         if not phone:
             raise UserError("رقم الهاتف مفقود للعميل في المشروع")
+
         cleaned_phone = ''.join(filter(str.isdigit, phone))
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        self._portal_ensure_token()
-        project_url = f"{base_url}/report/pdf/engineering_project.report_initial_design_template/{self.id}"
-        message = _("مرحباً %s،\nنرفق لكم نموذج مكونات المشروع للمراجعة.\nالرابط:\n%s") % (self.project_id.partner_id.name, project_url)
+
+        # Generate a token for the task so the link is publicly accessible
+        self.sudo()._portal_ensure_token()
+        token = self.sudo().access_token if hasattr(self, 'access_token') else ''
+
+        if token:
+            project_url = (
+                f"{base_url}/report/pdf/engineering_project.report_initial_design_template"
+                f"/{self.id}?access_token={token}"
+            )
+        else:
+            project_url = (
+                f"{base_url}/report/pdf/engineering_project.report_initial_design_template/{self.id}"
+            )
+
+        message = _("مرحباً %s،\nنرفق لكم نموذج مكونات المشروع للمراجعة.\nالرابط:\n%s") % (
+            self.project_id.partner_id.name, project_url
+        )
         encoded_message = urllib.parse.quote(message)
         whatsapp_url = f"https://web.whatsapp.com/send?phone={cleaned_phone}&text={encoded_message}"
         return {'type': 'ir.actions.act_url', 'url': whatsapp_url, 'target': 'new'}
+
+    def action_send_project_form_pdf_whatsapp(self):
+        """
+        NEW METHOD: Sends the PDF of نموذج مكونات المشروع (initial design form)
+        via WhatsApp using a token-based URL so no login is required.
+        Only works for engineering tasks with the correct workflow step.
+        """
+        self.ensure_one()
+
+        if self.is_disabled:
+            raise UserError(_("لا يمكن إرسال نموذج مهمة مقفلة."))
+
+        allowed_steps = ['rn_1_1', 'nrn_1_1', 'ra_1_3', 'nra_1_3']
+        if self.workflow_step not in allowed_steps:
+            raise UserError(_("هذا الزر متاح فقط لمهام تصميم الكروكي."))
+
+        partner = self.project_id.partner_id
+        if not partner:
+            raise UserError(_("لا يوجد عميل مرتبط بالمشروع."))
+
+        phone = partner.mobile or partner.phone
+        if not phone:
+            raise UserError(_("لا يوجد رقم هاتف للعميل: %s") % partner.name)
+
+        cleaned_phone = ''.join(filter(str.isdigit, phone))
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
+        # Use sudo + _portal_ensure_token to generate a public access token
+        # This prevents the login page from appearing when the link is opened
+        task_sudo = self.sudo()
+        if hasattr(task_sudo, '_portal_ensure_token'):
+            task_sudo._portal_ensure_token()
+
+        token = task_sudo.access_token if hasattr(task_sudo, 'access_token') else ''
+
+        if token:
+            pdf_url = (
+                f"{base_url}/report/pdf/engineering_project.report_initial_design_template"
+                f"/{self.id}?access_token={token}"
+            )
+        else:
+            # Fallback: direct PDF URL (user must be logged in, but better than nothing)
+            pdf_url = (
+                f"{base_url}/report/pdf/engineering_project.report_initial_design_template/{self.id}"
+            )
+
+        message = _(
+            "مرحباً %s،\n"
+            "نرفق لكم نموذج مكونات المشروع الخاص بمشروعكم للمراجعة والاطلاع.\n\n"
+            "رابط النموذج:\n%s\n\n"
+            "شركة الهندسة المعمارية"
+        ) % (partner.name, pdf_url)
+
+        encoded_message = urllib.parse.quote(message)
+        whatsapp_url = f"https://web.whatsapp.com/send?phone={cleaned_phone}&text={encoded_message}"
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': whatsapp_url,
+            'target': 'new',
+        }
 
     def action_create_new_sketch(self):
         self.ensure_one()
@@ -1018,5 +1094,9 @@ class ProjectTaskPhase(models.Model):
     task_id = fields.Many2one('project.task', string='Task', ondelete='cascade')
     sequence = fields.Integer(string='التسلسل', default=10)
     floor_category = fields.Char(string='الدور (Floor)', required=True)
-    name = fields.Text(string='المرحلة (Phase)', required=True)
+    # FIX: Changed from Text to Char so the editable tree row does not
+    # collapse the multi-line widget unexpectedly on blur.
+    # If you truly need multi-line storage, keep Text but remove widget="text"
+    # from the tree view — the plain cell will wrap naturally without collapsing.
+    name = fields.Char(string='المرحلة (Phase)', required=True)
     is_completed = fields.Boolean(string='تم (Completed)', default=False)

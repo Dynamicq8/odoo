@@ -36,7 +36,6 @@ WORKFLOW_TEMPLATES = {
         {'code': 'rn_5_4', 'name': '4- إنهاء الإشراف', 'stage': 'المرحلة الخامسة', 'role': 'secretary_id', 'depends_on': ['rn_5_3']},
     ],
 
-    # 2. غير سكني (استثماري، صناعي، إلخ) + بناء جديد
     'non_res_new': [
         {'code': 'nrn_1_1', 'name': '1- تصميم الكروكي', 'stage': 'المرحلة الأولى', 'role': 'architect_id', 'depends_on': []},
         {'code': 'nrn_1_2', 'name': '2- تجميع المستندات', 'stage': 'المرحلة الأولى', 'role': 'secretary_id', 'depends_on': []},
@@ -65,7 +64,6 @@ WORKFLOW_TEMPLATES = {
         {'code': 'nrn_5_3', 'name': '4- إنهاء الإشراف', 'stage': 'المرحلة الخامسة', 'role': 'secretary_id', 'depends_on': ['nrn_5_2']},
     ],
 
-    # 3. سكن خاص + تعديل واضافة
     'res_add': [
         {'code': 'ra_1_1', 'name': '1- دراسة المخطط الإنشائي القديم', 'stage': 'المرحلة الأولى', 'role': 'structural_id', 'depends_on': []},
         {'code': 'ra_1_2', 'name': '2- كشف على العقار', 'stage': 'المرحلة الأولى', 'role': 'architect_id', 'depends_on': []},
@@ -220,12 +218,17 @@ class SaleOrder(models.Model):
             else:
                 # Original general fallback logic
                 docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
+                
                 if order.service_type == 'new_construction':
                     docs += "<li>وثيقة الملكية</li><li>كتاب التخصيص</li><li>مخطط المساحة</li>"
                 elif order.service_type in ['modification', 'addition', 'addition_modification']:
                     docs += "<li>رخصة البناء الأصلية</li><li>المخططات المرخصة</li><li>وثيقة البيت</li>"
                 elif order.service_type == 'demolition':
-                    docs += "<li>كتاب براءة ذمة من الكهرباء والماء</li><li>رخصة البناء القديمة</li>"
+                    # تم تحديث مستندات الهدم بناءً على طلبك
+                    docs += "<li>مدنيات الملاك</li>"
+                    docs += "<li>صور القسيمة</li>"
+                    docs += "<li>كتاب قطع التيار من وزارة الكهرباء</li>"
+                    docs += "<li>كتاب المواصلات من وزارة المواصلات</li>"
             
             docs += "</ul>"
             order.required_documents = docs
@@ -506,7 +509,7 @@ class ProjectProject(models.Model):
             
             # Updated logic for subtasks based on the new requirements
             if self.building_type == 'residential' and self.service_type == 'new_construction':
-                subtasks_to_create = ["الوثيقة", "المدنيات", "الموقع العام", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمه"]
+                subtasks_to_create = ["الوثيقة", "المدنيات", "الموقع العام"]
             elif self.building_type == 'residential' and self.service_type in ['addition', 'modification', 'addition_modification']:
                 subtasks_to_create = ["الوثيقة", "المدنيات", "الموقع العام", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمه"]
             elif (self.building_type == 'investment' or self.building_type == 'commercial') and self.service_type == 'new_construction':

@@ -99,6 +99,14 @@
                                     string="Sign Now"
                                     class="btn-primary"
                                     invisible="not sign_request_id"/>
+                                    
+                            <!-- NEW: WhatsApp Send Button added for Commitments -->
+                            <button name="action_send_whatsapp"
+                                    type="object"
+                                    string="WhatsApp"
+                                    class="btn-success"
+                                    icon="fa-whatsapp"
+                                    invisible="not sign_request_id"/>
                         </tree>
                     </field>
                 </page>
@@ -151,7 +159,6 @@
                                     class="btn-primary"
                                     invisible="not sign_request_id"/>
 
-                            <!-- NEW: WhatsApp Send Button -->
                             <button name="action_send_whatsapp"
                                     type="object"
                                     string="WhatsApp"
@@ -254,6 +261,14 @@
                                     string="Sign Now"
                                     class="btn-primary"
                                     invisible="not sign_request_id"/>
+                                    
+                            <!-- NEW: WhatsApp Send Button added for Commitments -->
+                            <button name="action_send_whatsapp"
+                                    type="object"
+                                    string="WhatsApp"
+                                    class="btn-success"
+                                    icon="fa-whatsapp"
+                                    invisible="not sign_request_id"/>
                         </tree>
                     </field>
                 </page>
@@ -290,7 +305,6 @@
                                     class="btn-primary"
                                     invisible="not sign_request_id"/>
 
-                            <!-- NEW: WhatsApp Send Button -->
                             <button name="action_send_whatsapp"
                                     type="object"
                                     string="WhatsApp"

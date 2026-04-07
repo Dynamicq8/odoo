@@ -17,17 +17,17 @@
                         <!-- HEADER WITH LOGO FROM SETTINGS -->
                         <div class="row custom-header-eng" style="border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 10px;">
                             <div class="col-3">
-                                <!-- Pulling the Logo you uploaded in Settings -->
-                                <img t-if="doc.company_id.logo" t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 100px;" alt="Logo"/>
+                                <!-- قمنا بتكبير اللوجو هنا عبر زيادة max-height -->
+                                <img t-if="doc.company_id.logo" t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 180px; max-width: 100%; object-fit: contain;" alt="Logo"/>
                             </div>
-                            <div class="col-9 text-right">
-                                <h2 style="margin:0; padding:0;">ديناميك للإستشارات الهندسية</h2>
+                            <div class="col-9 text-right" style="padding-top: 20px;">
+                                <h2 style="margin:0; padding:0; font-weight: bold;">ديناميك للإستشارات الهندسية</h2>
                                 <h3 style="margin:0; padding:0; color: #333;">DYNAMIC ENGINEERING CONSULTANTS</h3>
                             </div>
                         </div>
 
                         <!-- BLACK TITLE BAR -->
-                        <div style="background-color: #000; color: #fff; text-align: center; padding: 5px; font-size: 12px; margin-bottom: 20px;">
+                        <div style="background-color: #000; color: #fff; text-align: center; padding: 5px; font-size: 14px; margin-bottom: 20px; font-weight: bold;">
                             إستشاريون (تصميم وإشراف) - معماري - إنشائي - مباني وإنشاءات - تصميم - إدارة مشاريع
                         </div>
 
@@ -64,17 +64,17 @@
 
                         <!-- SERVICES LIST (FEATURES OR DESCRIPTION) -->
                         <div style="margin-bottom: 30px;">
-                            <p>يسرنا أن نقدم لكم عرض السعر بالخدمات التالية:</p>
+                            <p style="font-size: 16px; font-weight: bold;">يسرنا أن نقدم لكم عرض السعر بالخدمات التالية:</p>
                             
                             <t t-if="doc.engineering_package_id">
                                 
                                 <!-- 1. Check if Features exist on the Package -->
                                 <t t-if="doc.engineering_package_id.feature_ids">
-                                    <ul style="margin-right: 20px; padding-right: 20px; list-style-type: none;">
+                                    <ul style="margin-right: 20px; padding-right: 20px; list-style-type: none; font-size: 15px;">
                                         <t t-foreach="doc.engineering_package_id.feature_ids" t-as="feature">
                                             <li style="margin-bottom: 8px;">
-                                                <span t-if="feature.included" style="color: green; font-weight: bold;">✔</span>
-                                                <span t-if="not feature.included" style="color: red; font-weight: bold;">✖</span>
+                                                <span t-if="feature.included" style="color: green; font-weight: bold; font-size: 18px;">✔</span>
+                                                <span t-if="not feature.included" style="color: red; font-weight: bold; font-size: 18px;">✖</span>
                                                 <span t-out="feature.name" style="margin-right: 8px;"/>
                                             </li>
                                         </t>
@@ -83,26 +83,38 @@
                                 
                                 <!-- 2. If Features are empty, check if Description exists -->
                                 <t t-elif="doc.engineering_package_id.description and doc.engineering_package_id.description != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
-                                    <div t-out="doc.engineering_package_id.description" style="margin-right: 20px;"/>
+                                    <div t-out="doc.engineering_package_id.description" style="margin-right: 20px; font-size: 15px;"/>
                                 </t>
 
                             </t>
                         </div>
 
+                        <!-- REQUIRED DOCUMENTS BLOCK (NEW) -->
+                        <t t-if="doc.required_documents">
+                            <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #e0e0e0; background-color: #f9f9f9; border-radius: 5px;">
+                                <h4 style="color: #d9534f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-decoration: underline;">
+                                    يرجى إرسال هذه المستندات (Required Documents):
+                                </h4>
+                                <div style="font-size: 15px; line-height: 1.6; padding-right: 20px;">
+                                    <span t-field="doc.required_documents"/>
+                                </div>
+                            </div>
+                        </t>
+
                         <!-- FINANCIAL TOTAL -->
-                        <div style="margin-top: 30px; font-size: 16px;">
-                            <strong>قيمة الأتعاب المالية: </strong> 
-(<span t-esc="doc.amount_in_arabic_words()"/> دينار كويتي لا غير)
+                        <div style="margin-top: 30px; font-size: 16px; padding: 10px; background-color: #eef8f1; border: 1px solid #d6e9c6;">
+                            <strong>إجمالي قيمة الأتعاب المالية: </strong> 
+                            (<span t-esc="doc.amount_in_arabic_words()"/> دينار كويتي لا غير)
                         </div>
 
-                        <div style="margin-top: 40px;">
+                        <div style="margin-top: 40px; font-size: 16px;">
                             مع خالص التحية والتقدير،،،
                             <br/><br/>
                             <strong>ديناميك ديزاين للإستشارات الهندسية</strong>
                         </div>
 
                         <!-- FOOTER -->
-                        <div class="footer" style="border-top: 1px solid black; text-align: center; font-size: 10px; padding-top: 10px;">
+                        <div class="footer" style="border-top: 2px solid black; text-align: center; font-size: 11px; padding-top: 10px; margin-top: 30px;">
                             مدينة الكويت - قبلة - شارع الصالحية - مبنى رقم (18) الدور الأول مكتب رقم (1)
                             <br/>
                             E-mail: info@DynamicSaud.com | Mobile: 99674300 - 50855599

@@ -85,6 +85,20 @@
             </t>
             <!-- END PACKAGE BLOCK -->
 
+            <!-- REQUIRED DOCUMENTS BLOCK (NEW) -->
+            <t t-if="sale_order.required_documents">
+                <div class="row mt-4 mb-4" id="required_documents_section">
+                    <div class="col-12">
+                        <h5 class="mb-3 text-danger">يرجى إرسال هذه المستندات (Required Documents)</h5>
+                        <hr/>
+                        <div class="bg-light p-3 rounded border">
+                            <span t-field="sale_order.required_documents"/>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            <!-- END REQUIRED DOCUMENTS BLOCK -->
+
         </xpath>
     </template>
 </odoo>

@@ -60,26 +60,6 @@
 
     <!-- ====================================================== -->
     <!--  2. TASK FORM (EDITED WITH NEW TABS)                   -->
-    <!--                                                        -->
-    <!--  Tab visibility rules:                                 -->
-    <!--  • "نموذج مكونات المشروع" → engineering tasks only    -->
-    <!--  • "رسومات كروكي"         → engineering tasks only    -->
-    <!--  • "مرفقات"               → always visible            -->
-    <!--                                                        -->
-    <!--  Hidden for العقد وتحصيل الدفعة الأولى               -->
-    <!--    (workflow_step in rn_1_3, nrn_1_3, ra_1_5,         -->
-    <!--                         nra_1_5, dem_1_2):            -->
-    <!--    • التعهدات tab   → hidden (controlled in           -->
-    <!--                       commitments_views.xml)           -->
-    <!--    • site visit tab → never existed; confirmed absent  -->
-    <!--                                                        -->
-    <!--  Hidden for سيستم الأعمدة                             -->
-    <!--    (workflow_step in rn_2_1, nrn_2_1, ra_2_1,         -->
-    <!--                         nra_2_1):                      -->
-    <!--    • التعهدات tab   → hidden (commitments_views.xml)   -->
-    <!--    • site visit tab → never existed; confirmed absent  -->
-    <!--    • نموذج مكونات  → hidden (only المرفقات shown)     -->
-    <!--    • رسومات كروكي  → hidden (only المرفقات shown)     -->
     <!-- ====================================================== -->
     <record id="view_task_form2_engineering_extended" model="ir.ui.view">
         <field name="name">project.task.form.engineering.extended</field>
@@ -94,6 +74,10 @@
                 <button name="action_send_task_form_whatsapp"
                         string="إرسال واتساب (WhatsApp)" type="object" class="btn-success" icon="fa-whatsapp"
                         invisible="is_disabled"/>
+                <!-- NEW: Send PDF of نموذج مكونات المشروع via WhatsApp -->
+                <button name="action_send_project_form_pdf_whatsapp"
+                        string="إرسال نموذج المكونات واتساب" type="object" class="btn-success" icon="fa-whatsapp"
+                        invisible="is_disabled or workflow_step not in ['rn_1_1','nrn_1_1','ra_1_3','nra_1_3']"/>
                 <button name="action_view_parent_project"
                         string="الذهاب للمشروع (Go to Project)" type="object" icon="fa-briefcase"/>
             </xpath>
@@ -117,12 +101,17 @@
 
                 <!--
                     تبويب نموذج مكونات المشروع
-                    • Visible for engineering tasks ONLY
-                    • Hidden for سيستم الأعمدة tasks — only المرفقات + description kept
-                      workflow_step codes for سيستم الأعمدة: rn_2_1, nrn_2_1, ra_2_1, nra_2_1
                 -->
                 <page string="نموذج مكونات المشروع" name="project_details_form"
-                      invisible="not is_engineering_task or workflow_step in ['rn_2_1','nrn_2_1','ra_2_1','nra_2_1']">
+                      invisible="
+                          not is_engineering_task
+                          or workflow_step not in [
+                              'rn_1_1',
+                              'nrn_1_1',
+                              'ra_1_3',
+                              'nra_1_3',
+                          ]
+                      ">
 
                     <div class="mb-3 mt-2">
                         <button name="action_load_default_phases" type="object"
@@ -134,80 +123,91 @@
                         </span>
                     </div>
 
+                    <!--
+                        FIX: Use 'text' widget on the 'name' field so multi-line input
+                        is preserved and does not collapse on blur. Also set
+                        optional="show" on columns so they always display.
+                    -->
                     <field name="phase_ids" context="{'default_task_id': active_id}" readonly="is_disabled">
-                        <tree editable="bottom" decoration-success="is_completed==True" decoration-muted="is_completed==False">
+                        <tree editable="bottom"
+                              decoration-success="is_completed==True"
+                              decoration-muted="is_completed==False">
                             <field name="sequence" widget="handle"/>
-                            <field name="floor_category" placeholder="مثال: الدور الثالث"/>
-                            <field name="name" widget="text" placeholder="مثال: مرحلة أعمدة الدور الثالث"/>
-                            <field name="is_completed" widget="boolean_toggle"/>
+                            <field name="floor_category"
+                                   placeholder="مثال: الدور الثالث"
+                                   string="الدور"/>
+                            <field name="name"
+                                   string="المرحلة"
+                                   placeholder="مثال: مرحلة أعمدة الدور الثالث"/>
+                            <field name="is_completed" widget="boolean_toggle" string="تم"/>
                         </tree>
                     </field>
+
+                    <!-- Button to send this tab's PDF via WhatsApp (inside the tab) -->
+                    <div class="mt-3" invisible="is_disabled">
+                        <button name="action_send_project_form_pdf_whatsapp"
+                                type="object"
+                                string="إرسال نموذج المكونات عبر واتساب"
+                                class="btn-success"
+                                icon="fa-whatsapp"/>
+                    </div>
                 </page>
 
                 <!--
                     تبويب رسومات كروكي
-                    • Visible for engineering tasks ONLY
-                    • Hidden for سيستم الأعمدة tasks
                 -->
-               <page string="رسومات كروكي (Sketches)" name="sketches"
-      invisible="
-          not is_engineering_task
-          or workflow_step not in [
-              'rn_1_1',
-              'rn_2_3',
-              'rn_4_1',
-              'nrn_1_1',
-              'nrn_2_3',
-              'nrn_4_1',
-              'ra_1_3',
-              'ra_4_1',
-              'nra_1_3',
-              'nra_4_1'
-          ]
-      ">
+                <page string="رسومات كروكي (Sketches)" name="sketches"
+                      invisible="
+                          not is_engineering_task
+                          or workflow_step not in [
+                              'rn_1_1',
+                              'nrn_1_1',
+                              'ra_1_3',
+                              'nra_1_3'
+                          ]
+                      ">
 
-    <field name="sketch_ids" nolabel="1" readonly="is_disabled">
-        <tree>
-            <field name="name"/>
-            <field name="create_date" string="تاريخ الإنشاء"/>
-            <field name="created_by_id"/>
-            <button name="action_open_sketch_editor"
-                    type="object"
-                    icon="fa-pencil"
-                    string="تعديل"
-                    help="Open Sketch Editor"/>
-        </tree>
+                    <field name="sketch_ids" nolabel="1" readonly="is_disabled">
+                        <tree>
+                            <field name="name"/>
+                            <field name="create_date" string="تاريخ الإنشاء"/>
+                            <field name="created_by_id"/>
+                            <button name="action_open_sketch_editor"
+                                    type="object"
+                                    icon="fa-pencil"
+                                    string="تعديل"
+                                    help="Open Sketch Editor"/>
+                        </tree>
 
-        <form>
-            <sheet>
-                <group>
-                    <field name="name"/>
-                    <field name="created_by_id" readonly="1"/>
-                    <field name="create_date" readonly="1"/>
-                </group>
+                        <form>
+                            <sheet>
+                                <group>
+                                    <field name="name"/>
+                                    <field name="created_by_id" readonly="1"/>
+                                    <field name="create_date" readonly="1"/>
+                                </group>
 
-                <separator string="Sketch Pad"/>
-                <field name="sketch_image"
-                       widget="sketch_pad_editor"
-                       style="width: 100%; height: 500px;"/>
-            </sheet>
-        </form>
-    </field>
+                                <separator string="Sketch Pad"/>
+                                <field name="sketch_image"
+                                       widget="sketch_pad_editor"
+                                       style="width: 100%; height: 500px;"/>
+                            </sheet>
+                        </form>
+                    </field>
 
-    <button name="action_create_new_sketch"
-            type="object"
-            string="إضافة رسم كروكي جديد"
-            class="oe_highlight"
-            icon="fa-plus-circle"
-            invisible="is_disabled"/>
+                    <button name="action_create_new_sketch"
+                            type="object"
+                            string="إضافة رسم كروكي جديد"
+                            class="oe_highlight"
+                            icon="fa-plus-circle"
+                            invisible="is_disabled"/>
 
-    <field name="sketch_count" invisible="1"/>
+                    <field name="sketch_count" invisible="1"/>
 
-</page>
+                </page>
 
                 <!--
                     تبويب المرفقات
-                    • Always visible for ALL tasks (including العقد and سيستم الأعمدة)
                 -->
                 <page string="مرفقات" name="proofs_attachments">
                     <p class="text-muted">

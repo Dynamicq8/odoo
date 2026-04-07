@@ -76,7 +76,7 @@ def _action_send_whatsapp_direct(self):
     """
     Build a WhatsApp URL containing the signing link and open it in a new tab.
     The phone number is read from the customer (partner_id) on the linked
-    project or task.  Falls back to the current user's partner phone if the
+    project or task. Falls back to the current user's partner phone if the
     customer has no mobile/phone set.
 
     Priority for phone: partner.mobile → partner.phone → current user mobile/phone
@@ -88,7 +88,7 @@ def _action_send_whatsapp_direct(self):
     request = self.sign_request_id
 
     # ------------------------------------------------------------------ #
-    # 1.  Resolve the customer partner from project_id or task_id
+    # 1. Resolve the customer partner from project_id or task_id
     # ------------------------------------------------------------------ #
     partner = None
 
@@ -101,7 +101,7 @@ def _action_send_whatsapp_direct(self):
         partner = self.env.user.partner_id
 
     # ------------------------------------------------------------------ #
-    # 2.  Get phone number  (mobile preferred over phone)
+    # 2. Get phone number (mobile preferred over phone)
     # ------------------------------------------------------------------ #
     phone = (partner.mobile or partner.phone or '').strip()
 
@@ -116,10 +116,10 @@ def _action_send_whatsapp_direct(self):
         ))
 
     # ------------------------------------------------------------------ #
-    # 3.  Normalise phone to international format
-    #     Strips spaces, dashes, parentheses.
-    #     If number starts with 0, replace leading 0 with country code 965
-    #     (Kuwait default – adjust as needed).
+    # 3. Normalise phone to international format
+    #    Strips spaces, dashes, parentheses.
+    #    If number starts with 0, replace leading 0 with country code 965
+    #    (Kuwait default – adjust as needed).
     # ------------------------------------------------------------------ #
     import re
     phone_clean = re.sub(r'[\s\-\(\)]+', '', phone)
@@ -130,9 +130,7 @@ def _action_send_whatsapp_direct(self):
     phone_clean = phone_clean.lstrip('+')           # wa.me does not want the leading +
 
     # ------------------------------------------------------------------ #
-    # 4.  Build the signing URL
-    #     We look for the signer item matching the customer partner first;
-    #     if not found we fall back to the first available item.
+    # 4. Build the signing URL (Includes access_token so no login needed)
     # ------------------------------------------------------------------ #
     request_item = request.request_item_ids.filtered(
         lambda r: r.partner_id.id == partner.id
@@ -147,7 +145,7 @@ def _action_send_whatsapp_direct(self):
     sign_url = f"{base_url}/sign/document/{request.id}/{request_item[0].access_token}"
 
     # ------------------------------------------------------------------ #
-    # 5.  Compose WhatsApp message
+    # 5. Compose WhatsApp message
     # ------------------------------------------------------------------ #
     doc_name = request.reference or self.sign_template_id.name or _("المستند")
     message = (
@@ -183,6 +181,10 @@ class EngineeringProjectCommitment(models.Model):
     def action_sign_now(self):
         return _action_sign_now_direct(self)
 
+    # ADDED WhatsApp feature
+    def action_send_whatsapp(self):
+        return _action_send_whatsapp_direct(self)
+
 
 class EngineeringTaskCommitment(models.Model):
     _name = 'engineering.task.commitment'
@@ -195,6 +197,10 @@ class EngineeringTaskCommitment(models.Model):
 
     def action_sign_now(self):
         return _action_sign_now_direct(self)
+        
+    # ADDED WhatsApp feature
+    def action_send_whatsapp(self):
+        return _action_send_whatsapp_direct(self)
 
 
 class EngineeringProjectCompanyContract(models.Model):
