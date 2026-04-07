@@ -139,7 +139,7 @@
                             <field name="name"
                                    string="المرحلة"
                                     widget="text" 
-
+                                    class="text-wrap" 
                                    placeholder="مثال: مرحلة أعمدة الدور الثالث"/>
                             <field name="is_completed" widget="boolean_toggle" string="تم"/>
                         </tree>
