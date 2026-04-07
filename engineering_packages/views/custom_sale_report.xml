@@ -93,7 +93,7 @@
                         <t t-if="doc.required_documents">
                             <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #e0e0e0; background-color: #f9f9f9; border-radius: 5px;">
                                 <h4 style="color: #d9534f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-decoration: underline;">
-                                    يرجى إرسال هذه المستندات (Required Documents):
+                                    يي اله الموافقه علي عرض السعر يرجي ارسال هذه المستندات الينا علي الرقم التالي : 22091228
                                 </h4>
                                 <div style="font-size: 15px; line-height: 1.6; padding-right: 20px;">
                                     <span t-field="doc.required_documents"/>
