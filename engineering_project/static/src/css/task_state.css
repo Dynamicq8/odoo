@@ -1,8 +1,17 @@
-/* engineering_project/static/src/css/task_state.css */
+/* 1. In Progress - Change color (e.g., to Blue) */
+.o_field_project_task_state_selection .form-check:has(input[value="01_in_progress"]) label,
+.o_field_project_task_state_selection .form-check:has(input[value="01_in_progress"]) i {
+    color: yellow; !important; /* Change hex code to whatever blue/color you want */
+}
 
-/* Target the 'In Progress' state (which uses Odoo's default text-muted class) 
-   and force it to be black instead of grey inside the state widget */
-div[name="state"] .text-muted,
-div[name="state"] i.text-muted {
-    color: #000000 !important;
+/* 2. Changes Requested - Change color (e.g., to Red) */
+.o_field_project_task_state_selection .form-check:has(input[value="02_changes_requested"]) label,
+.o_field_project_task_state_selection .form-check:has(input[value="02_changes_requested"]) i {
+    color: blue; !important; /* Change hex code to whatever red/orange you want */
+}
+
+/* 3. Approved - Change color (e.g., to Dark Green) */
+.o_field_project_task_state_selection .form-check:has(input[value="03_approved"]) label,
+.o_field_project_task_state_selection .form-check:has(input[value="03_approved"]) i {
+    color: green !important; /* Change hex code to whatever green you want */
 }
