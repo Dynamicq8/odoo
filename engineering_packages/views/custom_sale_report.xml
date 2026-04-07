@@ -89,18 +89,6 @@
                             </t>
                         </div>
 
-                        <!-- REQUIRED DOCUMENTS BLOCK (NEW) -->
-                        <t t-if="doc.required_documents">
-                            <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #e0e0e0; background-color: #f9f9f9; border-radius: 5px;">
-                                <h4 style="color: #d9534f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-decoration: underline;">
-                                    يي اله الموافقه علي عرض السعر يرجي ارسال هذه المستندات الينا علي الرقم التالي : 22091228
-                                </h4>
-                                <div style="font-size: 15px; line-height: 1.6; padding-right: 20px;">
-                                    <span t-field="doc.required_documents"/>
-                                </div>
-                            </div>
-                        </t>
-
                         <!-- FINANCIAL TOTAL -->
                         <div style="margin-top: 30px; font-size: 16px; padding: 10px; background-color: #eef8f1; border: 1px solid #d6e9c6;">
                             <strong>إجمالي قيمة الأتعاب المالية: </strong> 
@@ -112,7 +100,17 @@
                             <br/><br/>
                             <strong>ديناميك ديزاين للإستشارات الهندسية</strong>
                         </div>
-
+  <!-- REQUIRED DOCUMENTS BLOCK (NEW) -->
+                        <t t-if="doc.required_documents">
+                            <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #e0e0e0; background-color: #f9f9f9; border-radius: 5px;">
+                                <h4 style="color: #d9534f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-decoration: underline;">
+                                    يي اله الموافقه علي عرض السعر يرجي ارسال هذه المستندات الينا علي الرقم التالي : 22091228
+                                </h4>
+                                <div style="font-size: 15px; line-height: 1.6; padding-right: 20px;">
+                                    <span t-field="doc.required_documents"/>
+                                </div>
+                            </div>
+                        </t>
                         <!-- FOOTER -->
                         <div class="footer" style="border-top: 2px solid black; text-align: center; font-size: 11px; padding-top: 10px; margin-top: 30px;">
                             مدينة الكويت - قبلة - شارع الصالحية - مبنى رقم (18) الدور الأول مكتب رقم (1)

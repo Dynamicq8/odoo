@@ -89,7 +89,7 @@
             <t t-if="sale_order.required_documents">
                 <div class="row mt-4 mb-4" id="required_documents_section">
                     <div class="col-12">
-                        <h5 class="mb-3 text-danger">يرجى إرسال هذه المستندات (Required Documents)</h5>
+                        <h5 class="mb-3 text-danger">في اله الموافقه علي عرض السعر يرجي ارسال هذه المستندات الينا علي الرقم التالي : 22091228</h5>
                         <hr/>
                         <div class="bg-light p-3 rounded border">
                             <span t-field="sale_order.required_documents"/>
