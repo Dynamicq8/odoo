@@ -119,22 +119,20 @@
                     </div>
 
                     <field name="phase_ids" context="{'default_task_id': active_id}" readonly="is_disabled">
-                        <!-- ============================================ -->
-                        <!--     تم حذف editable="bottom" من هنا          -->
-                        <!-- ============================================ -->
-                        <tree decoration-success="is_completed==True"
-                              decoration-muted="is_completed==False">
+                        <!-- ======================================================== -->
+                        <!--  NO editable="bottom" so it opens a POPUP window!        -->
+                        <!-- ======================================================== -->
+                        <tree decoration-success="is_completed==True" decoration-muted="is_completed==False">
                             <field name="sequence" widget="handle"/>
                             <field name="floor_category" string="الدور"/>
-                            <!-- Added widget="text" here too so the tree view properly formats multi-line data -->
+                            <!-- widget="text" to display new lines in tree view -->
                             <field name="name" string="المرحلة" widget="text" class="text-wrap"/>
                             <field name="is_completed" widget="boolean_toggle" string="تم"/>
                         </tree>
                         
                         <!-- 
-                            This is the Form that will open as a popup.
-                            Notice the "name" field here now uses widget="text" 
-                            to allow hitting Enter for new lines.
+                            POP-UP FORM:
+                            Here you can press ENTER safely to create a new line!
                         -->
                         <form>
                             <sheet>
@@ -146,8 +144,7 @@
                                 </group>
                                 <group>
                                     <separator string="تفاصيل المرحلة"/>
-                                    <!-- Add widget="text" so you can press Enter to go down a line -->
-                                    <field name="name" widget="text" placeholder="مثال:&#10;مرحلة أعمدة الدور الثالث&#10;مع ملاحظات إضافية هنا..."/>
+                                    <field name="name" widget="text" placeholder="مرحلة أعمدة الدور الثالث..."/>
                                 </group>
                             </sheet>
                         </form>
