@@ -129,7 +129,7 @@
                         optional="show" on columns so they always display.
                     -->
                     <field name="phase_ids" context="{'default_task_id': active_id}" readonly="is_disabled">
-                        <tree editable="bottom"
+                        <tree
                               decoration-success="is_completed==True"
                               decoration-muted="is_completed==False">
                             <field name="sequence" widget="handle"/>
