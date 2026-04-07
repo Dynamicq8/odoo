@@ -20,6 +20,11 @@
         'views/sale_portal_templates.xml',  # <--- ADD THIS LINE
 
     ],
+    'assets': {
+        'web.assets_backend': [
+            'engineering_quotation/static/src/css/state.css',
+        ],
+    },
     'license': 'LGPL-3',
     'installable': True,
     'application': True,
