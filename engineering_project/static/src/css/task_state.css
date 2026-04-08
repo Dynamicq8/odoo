@@ -1,60 +1,68 @@
 /* ==========================================================
-   1. HIDE "CANCELED" AND "DONE" (Works for Teleported Dropdowns)
+   1. HIDE "CANCELED" AND "DONE"
    ========================================================== */
-/* Hide the items by targeting their specific icons and Odoo classes */
-.dropdown-menu .dropdown-item:has(i.fa-times-circle.text-danger),
+.dropdown-menu .dropdown-item:has(i.fa-times-circle),
 .dropdown-menu .dropdown-item:has(i.fa-check-circle.text-success),
-.dropdown-menu .o_status_1_canceled,
-.dropdown-menu .o_status_1_done {
+[name="state"] .dropdown-menu .dropdown-item:nth-last-child(-n+2) {
     display: none !important;
 }
 
-/* Hide the gray separator line just above them */
-.dropdown-menu:has(i.fa-times-circle.text-danger) .dropdown-divider,
-.dropdown-menu:has(.o_status_1_canceled) .dropdown-divider {
+.dropdown-menu .dropdown-divider:last-of-type {
+    display: none !important;
+}
+
+/* Target by data value - most reliable method */
+.dropdown-menu .dropdown-item[data-value="1_done"],
+.dropdown-menu .dropdown-item[data-value="1_canceled"] {
     display: none !important;
 }
 
 /* ==========================================================
-   2. CHANGE COLORS IN THE DROPDOWN LIST
+   2. DROPDOWN LIST COLORS
    ========================================================== */
-/* In Progress - Blue */
-.dropdown-menu .o_status_01_in_progress,
-.dropdown-menu .o_status_01_in_progress i {
-    color: #007bff !important; 
+/* In Progress - Purple */
+.dropdown-menu .dropdown-item[data-value="01_in_progress"],
+.dropdown-menu .dropdown-item[data-value="01_in_progress"] i {
+    color: #7c3aed !important;
 }
 
-/* Changes Requested - Orange/Purple */
-.dropdown-menu .o_status_02_changes_requested,
-.dropdown-menu .o_status_02_changes_requested i {
-    color: #fd7e14 !important; /* Adjust Hex as needed */
+/* Changes Requested - Orange */
+.dropdown-menu .dropdown-item[data-value="02_changes_requested"],
+.dropdown-menu .dropdown-item[data-value="02_changes_requested"] i {
+    color: #fd7e14 !important;
 }
 
 /* Approved - Green */
-.dropdown-menu .o_status_03_approved,
-.dropdown-menu .o_status_03_approved i {
-    color: #198754 !important; 
+.dropdown-menu .dropdown-item[data-value="03_approved"],
+.dropdown-menu .dropdown-item[data-value="03_approved"] i {
+    color: #198754 !important;
 }
 
 /* ==========================================================
-   3. CHANGE COLORS OF THE MAIN SELECTED BUTTON (BADGE)
+   3. SELECTED BUTTON (BADGE) COLORS
    ========================================================== */
-/* When 'In Progress' is selected */
+/* In Progress - Purple (default state, no special text-* class) */
 .o_field_project_task_state_selection button:not(.text-success):not(.text-warning):not(.text-danger) {
-    color: #007bff !important;
-    border-color: #007bff !important;
+    color: #7c3aed !important;
+    border-color: #7c3aed !important;
 }
 
-/* When 'Changes Requested' is selected */
-.o_field_project_task_state_selection button.text-warning,
-.o_field_project_task_state_selection button.border-warning {
-    color: #fd7e14 !important; 
+/* Changes Requested - Orange */
+.o_field_project_task_state_selection button.text-warning {
+    color: #fd7e14 !important;
     border-color: #fd7e14 !important;
 }
 
-/* When 'Approved' is selected */
-.o_field_project_task_state_selection button.text-success,
-.o_field_project_task_state_selection button.border-success {
-    color: #198754 !important; 
+/* Approved - Green */
+.o_field_project_task_state_selection button.text-success {
+    color: #198754 !important;
     border-color: #198754 !important;
+}
+
+/* ==========================================================
+   4. KANBAN STATUS DOT - Purple for In Progress
+   ========================================================== */
+.o_status.o_status_01_in_progress {
+    background-color: #7c3aed !important;
+    border-color: #7c3aed !important;
 }

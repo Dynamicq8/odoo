@@ -597,9 +597,9 @@ class ProjectTask(models.Model):
     _inherit = 'project.task'
     
     state = fields.Selection([
-        ('01_in_progress', 'In Progress (قيد التنفيذ)'),
-        ('02_changes_requested', 'Changes Requested (مطلوب تعديلات)'),
-        ('03_approved', 'Approved (معتمد)'),
+    ('01_in_progress', 'In Progress (قيد التنفيذ)'),
+    ('02_changes_requested', 'Changes Requested (مطلوب تعديلات)'),
+    ('03_approved', 'Approved (معتمد)'),
     ], string='Status', default='01_in_progress', tracking=True)
 
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
