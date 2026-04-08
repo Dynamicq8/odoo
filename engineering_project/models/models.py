@@ -407,7 +407,8 @@ class SaleOrder(models.Model):
         gov_id = getattr(self, 'governorate_id', False)
         reg_id = getattr(self, 'region_id', False)
         elec = getattr(self, 'electricity_receipt', False)
-
+        civil_no = getattr(self, 'civil_number', False) # <-- تم استدعاء الرقم المدني هنا
+        
         project_vals = {
             'name': f"{self.name} - {self.partner_id.name or ''}",
             'partner_id': self.partner_id.id,
@@ -421,6 +422,7 @@ class SaleOrder(models.Model):
             'governorate_id': gov_id.id if gov_id else False,
             'region_id': reg_id.id if reg_id else False,
             'electricity_receipt': elec,
+            'civil_number': civil_no, # <-- تم نقل الرقم المدني للمشروع هنا
             'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,
         }
         project = self.env['project.project'].create(project_vals)
@@ -721,7 +723,12 @@ class ProjectProject(models.Model):
 # ==============================================================================
 class ProjectTask(models.Model):
     _inherit = 'project.task'
-
+    state = fields.Selection([
+        ('01_in_progress', 'In Progress (قيد التنفيذ)'),
+        ('02_changes_requested', 'Changes Requested (مطلوب تعديلات)'),
+        ('03_approved', 'Approved (معتمد)'),
+    ], string='Status', default='01_in_progress', tracking=True)
+    
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
     is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
     phase_ids = fields.One2many('project.task.phase', 'task_id', string='مراحل التنفيذ (Phases)')
@@ -834,7 +841,7 @@ class ProjectTask(models.Model):
         for task in self:
             is_done = False
 
-            if vals.get('state') in['1_done', '03_approved']:
+            if vals.get('state') in['03_approved']:
                 is_done = True
 
             elif 'stage_id' in vals:

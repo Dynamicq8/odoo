@@ -8,7 +8,6 @@ import urllib.parse
 #  WORKFLOW TEMPLATES (خرائط سير العمل مع نظام الاعتماديات)
 # ==============================================================================
 WORKFLOW_TEMPLATES = {
-    # 1. سكن خاص + بناء جديد
     'res_new': [
         {'code': 'rn_1_1', 'name': '1- تصميم الكروكي', 'stage': 'المرحلة الأولى', 'role': 'architect_id', 'depends_on': []},
         {'code': 'rn_1_2', 'name': '2- تجميع المستندات', 'stage': 'المرحلة الأولى', 'role': 'secretary_id', 'depends_on': []},
@@ -86,7 +85,6 @@ WORKFLOW_TEMPLATES = {
         {'code': 'ra_5_3', 'name': '3- إنهاء الإشراف', 'stage': 'المرحلة الخامسة', 'role': 'secretary_id', 'depends_on': ['ra_5_1']},
     ],
 
-    # 4. غير سكني (استثماري، صناعي، إلخ) + تعديل واضافة
     'non_res_add': [
         {'code': 'nra_1_1', 'name': '1- دراسة المخطط الإنشائي القديم', 'stage': 'المرحلة الأولى', 'role': 'structural_id', 'depends_on': []},
         {'code': 'nra_1_2', 'name': '2- كشف على العقار', 'stage': 'المرحلة الأولى', 'role': 'architect_id', 'depends_on': []},
@@ -112,7 +110,6 @@ WORKFLOW_TEMPLATES = {
         {'code': 'nra_5_2', 'name': '3- إنهاء الإشراف', 'stage': 'المرحلة الخامسة', 'role': 'secretary_id', 'depends_on': ['nra_1_1']},
     ],
     
-    # 5. هدم (لكل أنواع المباني)
     'demolition': [
         {'code': 'dem_1_1', 'name': '1- تجميع المستندات والوثائق', 'stage': 'المرحلة الأولى', 'role': 'secretary_id', 'depends_on': []},
         {'code': 'dem_1_2', 'name': '2- العقد وتحصيل الدفعة الأولى', 'stage': 'المرحلة الأولى', 'role': 'accountant_id', 'depends_on': []},
@@ -133,17 +130,20 @@ WORKFLOW_TEMPLATES = {
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار")
-    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة")
+    building_type = fields.Selection([('residential', 'سكن خاص'), ('investment', 'استثماري'), ('commercial', 'تجاري'), ('industrial', 'صناعي'), ('cooperative', 'جمعيات وتعاونيات'), ('mosque', 'مساجد'), ('hangar', 'مخازن / شبرات'), ('farm', 'مزارع')], string="نوع العقار", store=True)
+    service_type = fields.Selection([('new_construction', 'بناء جديد'), ('demolition', 'هدم'), ('modification', 'تعديل'), ('addition', 'اضافة'), ('addition_modification', 'تعديل واضافة'), ('supervision_only', 'إشراف هندسي فقط'), ('renovation', 'ترميم'), ('internal_partitions', 'قواطع داخلية'), ('shades_garden', 'مظلات / حدائق')], string="نوع الخدمة", store=True)
 
-    plot_no = fields.Char(string="رقم القسيمة")
-    block_no = fields.Char(string="القطعة")
-    street_no = fields.Char(string="الضاحيه")
-    area = fields.Char(string="مساحة الارض")
+    plot_no = fields.Char(string="رقم القسيمة", store=True)
+    block_no = fields.Char(string="القطعة", store=True)
+    street_no = fields.Char(string="الضاحيه", store=True)
+    area = fields.Char(string="مساحة الارض", store=True)
+    
     electricity_receipt = fields.Char(string="ايصال تيار كهربا")
+    civil_number = fields.Char(string="الرقم المدني", store=True) # تم إضافة الحقل الجديد هنا
 
-    governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة")
-    region_id = fields.Many2one('kuwait.region', string="المنطقة")
+    governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة", store=True)
+    region_id = fields.Many2one('kuwait.region', string="المنطقة", store=True)
+    engineering_package_id = fields.Many2one('engineering.package', string="Engineering Package", store=True)
 
     project_id = fields.Many2one('project.project', string='Project', copy=False)
 
@@ -160,12 +160,29 @@ class SaleOrder(models.Model):
 
     required_documents = fields.Html(string="المستندات المطلوبة", compute='_compute_required_documents', store=True)
 
+    @api.onchange('partner_id')
+    def _onchange_partner_id_engineering_fields(self):
+        if self.partner_id:
+            self.building_type = self.partner_id.building_type
+            self.service_type = self.partner_id.service_type
+            self.plot_no = self.partner_id.plot_no
+            self.block_no = self.partner_id.block_no
+            self.street_no = self.partner_id.street_no
+            self.area = self.partner_id.area
+            self.electricity_receipt = self.partner_id.electricity_receipt
+            
+            # جلب الرقم المدني من العميل بأمان
+            if hasattr(self.partner_id, 'civil_number'):
+                self.civil_number = self.partner_id.civil_number
+                
+            self.governorate_id = self.partner_id.governorate_id
+            self.region_id = self.partner_id.region_id
+
     @api.depends('service_type', 'building_type')
     def _compute_required_documents(self):
         for order in self:
             docs = "<ul>"
             
-            # Helper for new_construction, addition, addition_modification
             is_new_or_add = order.service_type in ['new_construction', 'addition', 'addition_modification']
 
             if order.building_type == 'residential' and order.service_type == 'new_construction':
@@ -174,7 +191,6 @@ class SaleOrder(models.Model):
                 docs += "<li>الموقع العام</li>"
             
             elif order.building_type == 'residential' and order.service_type in ['addition', 'modification', 'addition_modification']:
-                # Your existing logic for residential + add/edit
                 docs += "<li>الوثيقة</li>"
                 docs += "<li>المدنيات</li>"
                 docs += "<li>الموقع العام</li>"
@@ -190,7 +206,6 @@ class SaleOrder(models.Model):
                 docs += "<li>الارقام الاليه</li>"
 
             elif (order.building_type == 'investment' or order.building_type == 'commercial') and order.service_type in ['addition', 'modification', 'addition_modification']:
-                # The user specified showing 10 docs if add/edit for investment/commercial
                 docs += "<li>الوثيقة</li>"
                 docs += "<li>المدنيات</li>"
                 docs += "<li>اعتماد التوقيع ومدنية المفوض</li>"
@@ -202,7 +217,7 @@ class SaleOrder(models.Model):
                 docs += "<li>مخطط المطافئ ورخصة المطافئ</li>"
                 docs += "<li>كتب التفويض من الشركة</li>"
 
-            elif order.building_type == 'industrial': # User specified showing 10 docs always for industrial
+            elif order.building_type == 'industrial':
                 docs += "<li>عقد املاك الدوله</li>"
                 docs += "<li>المدنيات</li>"
                 docs += "<li>اعتماد التوقيع ومدنية المفوض</li>"
@@ -216,7 +231,6 @@ class SaleOrder(models.Model):
                 docs += "<li>وصل ايجار سارى</li>"
 
             else:
-                # Original general fallback logic
                 docs += "<li>البطاقة المدنية للمالك (Civil ID Copy)</li>"
                 
                 if order.service_type == 'new_construction':
@@ -224,7 +238,6 @@ class SaleOrder(models.Model):
                 elif order.service_type in ['modification', 'addition', 'addition_modification']:
                     docs += "<li>رخصة البناء الأصلية</li><li>المخططات المرخصة</li><li>وثيقة البيت</li>"
                 elif order.service_type == 'demolition':
-                    # تم تحديث مستندات الهدم بناءً على طلبك
                     docs += "<li>مدنيات الملاك</li>"
                     docs += "<li>صور القسيمة</li>"
                     docs += "<li>كتاب قطع التيار من وزارة الكهرباء</li>"
@@ -284,9 +297,9 @@ class SaleOrder(models.Model):
             'area': self.area,
             'governorate_id': self.governorate_id.id,
             'region_id': self.region_id.id,
-            'electricity_receipt': self.electricity_receipt, 
-            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,  # <-- ADD THIS
-
+            'electricity_receipt': self.electricity_receipt,
+            'civil_number': self.civil_number, # <-- نقل الرقم المدني للمشروع
+            'engineering_package_id': self.engineering_package_id.id if self.engineering_package_id else False,
         }
         project = self.env['project.project'].create(project_vals)
 
@@ -390,6 +403,7 @@ class ProjectProject(models.Model):
     street_no = fields.Char(string="الضاحيه")
     area = fields.Char(string="المساحة (Area)")
     electricity_receipt = fields.Char(string="ايصال تيار كهربا")
+    civil_number = fields.Char(string="الرقم المدني") # تمت الإضافة هنا ليتناسق مع المبيعات
 
     architect_id = fields.Many2one('res.users', string="المهندس المعماري")
     accountant_id = fields.Many2one('res.users', string="المحاسبة")
@@ -495,8 +509,6 @@ class ProjectProject(models.Model):
         subtask_base_vals = {
             'project_id': self.id,
             'parent_id': new_task.id,
-            # Subtasks are NEVER blocked — they have no workflow_step and have a parent_id
-            # so the write() guard will not apply to them regardless of is_disabled
             'is_disabled': False,
         }
         
@@ -507,7 +519,6 @@ class ProjectProject(models.Model):
             subtasks_to_create = []
             is_new_or_add = self.service_type in ['new_construction', 'addition', 'addition_modification']
             
-            # Updated logic for subtasks based on the new requirements
             if self.building_type == 'residential' and self.service_type == 'new_construction':
                 subtasks_to_create = ["الوثيقة", "المدنيات", "الموقع العام"]
             elif self.building_type == 'residential' and self.service_type in ['addition', 'modification', 'addition_modification']:
@@ -516,7 +527,7 @@ class ProjectProject(models.Model):
                 subtasks_to_create = ["الوثيقة", "المدنيات", "اعتماد التوقيع ومدنية المفوض", "الارقام الاليه"]
             elif (self.building_type == 'investment' or self.building_type == 'commercial') and self.service_type in ['addition', 'modification', 'addition_modification']:
                  subtasks_to_create = ["الوثيقة", "المدنيات", "اعتماد التوقيع ومدنية المفوض", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمة", "الارقام الاليه", "مخطط المطافئ ورخصة المطافئ", "كتب التفويض من الشركة"]
-            elif self.building_type == 'industrial': # Industrial always has the 10 documents
+            elif self.building_type == 'industrial':
                 subtasks_to_create = ["عقد املاك الدوله", "المدنيات", "اعتماد التوقيع ومدنية المفوض", "مخطط المرخص", "رخصة البناء", "صور عدادات الكهرباء", "صور وجهات القسيمة", "الارقام الاليه", "مخطط المطافئ ورخصة المطافئ", "كتب التفويض من الشركة", "وصل ايجار سارى"]
             elif self.building_type == 'residential' and self.service_type == 'shades_garden':
                 subtasks_to_create = ["الوثيقة", "المدنيات", "ورقة من الكهرباء تفيد دفع المبالغ او الفاتوره", "رخصه بناء للقسيمه", "صور القسيمه", "صور الحديقه"]
@@ -584,12 +595,12 @@ class ProjectProject(models.Model):
 # ==============================================================================
 class ProjectTask(models.Model):
     _inherit = 'project.task'
+    
     state = fields.Selection([
         ('01_in_progress', 'In Progress (قيد التنفيذ)'),
         ('02_changes_requested', 'Changes Requested (مطلوب تعديلات)'),
         ('03_approved', 'Approved (معتمد)'),
     ], string='Status', default='01_in_progress', tracking=True)
-    # state = fields.Selection(selection_remove=['1_done'])
 
     workflow_step = fields.Char(string="Workflow Trigger", readonly=True)
     is_disabled = fields.Boolean(string="مقفلة (Disabled)", default=False)
@@ -598,8 +609,6 @@ class ProjectTask(models.Model):
     def write(self, vals):
         if 'stage_id' in vals or 'state' in vals:
             for task in self:
-                # Only block main workflow tasks (they have workflow_step and no parent).
-                # Subtasks (parent_id is set) are always free to be approved/moved.
                 if task.is_disabled and task.workflow_step and not task.parent_id and vals.get('is_disabled') is not False:
                     raise UserError(_("لا يمكنك إنجاز أو تحريك هذه المهمة لأنها مقفلة! يجب إنجاز المهام السابقة أولاً."))
 
@@ -610,14 +619,8 @@ class ProjectTask(models.Model):
                 if task.project_id:
                     task.project_id._trigger_next_workflow_step()
                     
-                    # ----------------------------------------------------------------------------------
-                    # NEW LOGIC: When a specific subtask under "الإشراف على التنفيذ" is approved
-                    # Create a duplicate subtask inside "كتب البنك"
-                    # ----------------------------------------------------------------------------------
                     if task.parent_id and ('شراف' in task.parent_id.name) and ('تنفيذ' in task.parent_id.name):
-                        # Filter to only capture subtasks containing "قواعد" or "سقف"
                         if ('قواعد' in task.name) or ('سقف' in task.name):
-                            # Find the "كتب البنك" parent task inside the same project
                             bank_parent_task = self.env['project.task'].search([
                                 ('project_id', '=', task.project_id.id),
                                 ('name', 'ilike', 'كتب البنك'),
@@ -625,7 +628,6 @@ class ProjectTask(models.Model):
                             ], limit=1)
                             
                             if bank_parent_task:
-                                # Ensure we don't accidentally create duplicates if approved multiple times
                                 existing_subtask = self.env['project.task'].search([
                                     ('parent_id', '=', bank_parent_task.id),
                                     ('name', '=', task.name)

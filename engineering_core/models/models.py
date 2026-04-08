@@ -44,7 +44,8 @@ class SaleOrder(models.Model):
     street_no = fields.Char(string="الضاحيه", store=True)
     area = fields.Char(string="مساحة الارض", store=True)
     electricity_receipt = fields.Char(string="ايصال تيار كهربا") # تم إضافة الحقل هنا
-    
+    civil_number = fields.Char(string="الرقم المدني") # تمت الإضافة هنا ليتناسق مع المبيعات
+
     governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة", store=True)
     region_id = fields.Many2one('kuwait.region', string="المنطقة (Region)", store=True)
     engineering_package_id = fields.Many2one('engineering.package', string="Engineering Package", store=True)
@@ -61,3 +62,4 @@ class SaleOrder(models.Model):
             self.electricity_receipt = self.partner_id.electricity_receipt # سحب القيمة
             self.governorate_id = self.partner_id.governorate_id
             self.region_id = self.partner_id.region_id
+            self.civil_number = self.partner_id.civil_number

@@ -8,8 +8,10 @@
 
                 <!-- Project Details Section -->
                 <group string="بيانات المشروع (Project Details)">
+                    <field name="civil_number"/> <!-- تمت إضافة الرقم المدني هنا -->
                     <field name="building_type"/>
                     <field name="service_type"/>
+                    <field name="engineering_package_id"/>
                 </group>
 
                 <!-- Location Details Section -->
@@ -23,6 +25,7 @@
                     <field name="block_no"/>
                     <field name="street_no"/>
                     <field name="plot_no"/>
+                    <field name="electricity_receipt"/> <!-- تمت إضافة الإيصال الكهربائي هنا لتظهر قيمته -->
                 </group>
                 
             </xpath>

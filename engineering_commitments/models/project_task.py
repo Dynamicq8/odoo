@@ -454,6 +454,7 @@ class ProjectProject(models.Model):
             raw_gov_name = project.governorate_id.name if getattr(project, 'governorate_id', False) else ''
             clean_gov_name = raw_gov_name.replace('محافظة', '').replace('محافظه', '').strip()
 
+            # تم إضافة حقل civil وتمرير قيمة الرقم المدني للمشروع
             replacements = {
                 'name': f"          {project.partner_id.name or ''}",
                 'date': fields.Date.context_today(self).strftime("%d/%m/%Y"),
@@ -462,6 +463,7 @@ class ProjectProject(models.Model):
                 'block': f"          {getattr(project, 'block_no', '')}",
                 'plot': f"          {getattr(project, 'plot_no', '')}",
                 'area': str(getattr(project, 'area', '') or ''),
+                'civil': f"          {getattr(project, 'civil_number', '')}", # <==== التعديل هنا (الإضافة)
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }
