@@ -43,7 +43,7 @@ class SaleOrder(models.Model):
     block_no = fields.Char(string="القطعة", store=True)
     street_no = fields.Char(string="الضاحيه", store=True)
     area = fields.Char(string="مساحة الارض", store=True)
-    electricity_receipt = fields.Char(string="ايصال تيار كهربا") # تم إضافة الحقل هنا
+    electricity_receipt = fields.Char(string="رقم المخطط المساحي") # تم إضافة الحقل هنا
     civil_number = fields.Char(string="الرقم المدني") # تمت الإضافة هنا ليتناسق مع المبيعات
 
     governorate_id = fields.Many2one('kuwait.governorate', string="المحافظة", store=True)
