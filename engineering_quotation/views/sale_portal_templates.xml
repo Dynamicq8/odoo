@@ -1,9 +1,21 @@
 <odoo>
     <template id="sale_order_portal_content_inherit_engineering" inherit_id="sale.sale_order_portal_content">
-        <!-- XPATH to remove the default products table -->
-        <xpath expr="//div[@id='quote_lines']" position="replace">
+        <!-- XPATH to remove the default products table. We target the table directly within the 'details' div. -->
+        <!-- This xpath assumes the products table is directly inside a div with class 'table-responsive' or similar within #details or a subsequent div.
+             If this still fails, we might need a more specific selector or to remove a larger parent div.
+             Let's try to remove the entire block that usually contains products. -->
+        <xpath expr="//div[@id='details']//table" position="replace">
             <!-- This section is replaced with nothing to remove the products table -->
         </xpath>
+        
+        <!-- Also remove the total amount summary which is usually below the products table -->
+        <xpath expr="//div[hasclass('oe_sale_acquirer_button')] | //div[hasclass('o_portal_sale_sidebar')]" position="before">
+            <!-- This is a placeholder to find a good position relative to the totals, if they are separate. -->
+        </xpath>
+        <xpath expr="//div[hasclass('o_portal_total_table')]" position="replace">
+            <!-- Remove the total amount summary table -->
+        </xpath>
+
 
         <xpath expr="//div[@id='informations']" position="after">
             
