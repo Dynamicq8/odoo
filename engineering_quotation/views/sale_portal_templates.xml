@@ -64,21 +64,46 @@
                     </div>
                 </div>
 
-                <!-- 2. PACKAGE PRICE SECTION -->
-                <div class="alert alert-primary shadow-sm mb-4 border-0 d-flex justify-content-between align-items-center rounded" t-if="sale_order.engineering_package_id and sale_order.engineering_package_id.list_price">
-                    <div>
-                        <h5 class="mb-0 font-weight-bold text-primary">
-                            <i class="fa fa-tags" style="margin-left: 8px;"></i>سعر الباقة (Package Price)
-                        </h5>
-                    </div>
-                    <div>
-                        <h4 class="mb-0 font-weight-bold text-primary">
-                            <span t-field="sale_order.engineering_package_id.list_price"/>
-                        </h4>
-                    </div>
-                </div>
+                <!-- 2. PACKAGE FEATURES OR DESCRIPTION BLOCK (Returned) -->
+                <t t-if="sale_order.engineering_package_id">
+                    <div class="card shadow-sm border-0 mb-4 rounded" id="package_details_section">
+                        <div class="card-header bg-white pt-4 pb-2 border-bottom-0">
+                            <h5 class="mb-0 text-primary font-weight-bold">
+                                <i class="fa fa-cube" style="margin-left: 8px;"></i>تفاصيل الباقة (Package Details)
+                            </h5>
+                            <hr class="mt-3 mb-0 text-muted"/>
+                        </div>
+                        <div class="card-body">
+                            <!-- Check if Features exist on the Package -->
+                            <t t-if="sale_order.engineering_package_id.feature_ids">
+                                <div class="mb-3">
+                                    <ul class="list-unstyled">
+                                        <t t-foreach="sale_order.engineering_package_id.feature_ids" t-as="feature">
+                                            <li class="d-flex align-items-baseline mb-2">
+                                                <i class="fa fa-check-circle text-success" style="margin-left: 8px;"></i>
+                                                <span t-out="feature.name"/>
+                                            </li>
+                                        </t>
+                                    </ul>
+                                </div>
+                            </t>
+                            
+                            <!-- If Features are empty, check if Description exists -->
+                            <t t-elif="sale_order.engineering_package_id.description and sale_order.engineering_package_id.description != '&lt;p&gt;&lt;br&gt;&lt;/p&gt;'">
+                                <div class="mb-3" t-field="sale_order.engineering_package_id.description"/>
+                            </t>
 
-                <!-- 3. REQUIRED DOCUMENTS SECTION -->
+                            <!-- Package Price After Features/Description (Smaller Font) -->
+                            <div class="mt-3 pt-3 border-top text-left" t-if="sale_order.engineering_package_id.list_price">
+                                <strong class="text-muted" style="font-size: 0.9em;">سعر الباقة: </strong>
+                                <span class="text-primary font-weight-bold" style="font-size: 1.1em;" t-field="sale_order.engineering_package_id.list_price"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <!-- END PACKAGE BLOCK -->
+
+                <!-- 3. REQUIRED DOCUMENTS SECTION (Blue Alert) -->
                 <t t-if="sale_order.required_documents">
                     <div class="card shadow-sm border-0 mb-4 rounded" id="required_documents_section">
                         <div class="card-header bg-white pt-4 pb-2 border-bottom-0">
@@ -88,7 +113,6 @@
                             <hr class="mt-3 mb-0 text-muted"/>
                         </div>
                         <div class="card-body">
-                            <!-- Changed from Red to Blue Info Alert -->
                             <div class="alert alert-info d-flex align-items-center shadow-sm mb-4 border-0">
                                 <i class="fa fa-info-circle fa-2x" style="margin-left: 15px;"></i>
                                 <div style="font-size: 1.05em; line-height: 1.6;">
@@ -101,6 +125,7 @@
                         </div>
                     </div>
                 </t>
+                <!-- END REQUIRED DOCUMENTS BLOCK -->
 
             </div>
 
