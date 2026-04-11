@@ -613,7 +613,6 @@ class ProjectProject(models.Model):
         self.workflow_started = True
         self._trigger_next_workflow_step()
 
-        # --- إشعار بدء المشروع وفتح المهام الأولية للمستخدمين ---
         unlocked_tasks = self.env['project.task'].search([
             ('project_id', '=', self.id),
             ('is_disabled', '=', False),
@@ -642,7 +641,6 @@ class ProjectProject(models.Model):
                 'project_name': self.name,
                 'task_list': task_list_html
             }
-            # إرسال الرسالة مع تحديد الأشخاص لإرسال تنبيه لهم
             self.message_post(
                 body=message,
                 subject=_('إشعار بدء المشروع وفتح المهام'),
@@ -681,7 +679,6 @@ class ProjectProject(models.Model):
                     task.is_disabled = False
                     unlocked_in_this_run |= task
 
-        # --- إشعار المهام الجديدة التي تم فك قفلها للتو بناءً على التقدم ---
         if unlocked_in_this_run:
             user_unlocked_tasks = {}
             for task in unlocked_in_this_run:
@@ -813,18 +810,22 @@ class ProjectTask(models.Model):
     is_engineering_task = fields.Boolean(string="Is Engineering Task", compute="_compute_task_category", store=False)
     closed_subtask_count = fields.Integer(compute='_compute_subtask_count')
 
+    # ============================================================
+    # NEW FIELD: ملاحظات (Notes) — shown in sub-tasks tab
+    # ============================================================
+    notes = fields.Text(string="ملاحظات")
+
     @api.depends('child_ids.state', 'child_ids.stage_id')
     def _compute_subtask_count(self):
-        # استدعاء دالة أودو الافتراضية للحفاظ على الحساب الكلي للمهام
         if hasattr(super(ProjectTask, self), '_compute_subtask_count'):
             super(ProjectTask, self)._compute_subtask_count()
             
         for task in self:
-            # تعديل عداد المهام المنجزة ليحتسب '03_approved' كحالة منتهية
             closed_tasks = task.child_ids.filtered(
                 lambda t: t.state in['03_approved', '1_done', '1_canceled']
             )
             task.closed_subtask_count = len(closed_tasks)
+
     @api.depends('workflow_step')
     def _compute_task_category(self):
         for task in self:
@@ -1053,6 +1054,21 @@ class ProjectTask(models.Model):
             'target': 'new',
         }
 
+    def action_download_project_pdf(self):
+        """
+        ============================================================
+        NEW: Download project description as a well-designed PDF
+        with company logo and all project details.
+        ============================================================
+        """
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.report',
+            'report_name': 'engineering_project.report_project_description_pdf',
+            'report_type': 'qweb-pdf',
+            'data': {'res_ids': [self.id]},
+        }
+
     @api.model
     def _send_periodic_task_reminders(self):
         open_tasks = self.search([
@@ -1167,7 +1183,6 @@ class KuwaitRegion(models.Model):
 
 # ==============================================================================
 #  TASK CONSTRUCTION PHASE CHECKLIST 
-#  (EDITED TO AUTOMATICALLY REMOVE PLUS SIGN & FORMAT AS NEW LINE)
 # ==============================================================================
 class ProjectTaskPhase(models.Model):
     _name = 'project.task.phase'
@@ -1182,20 +1197,17 @@ class ProjectTaskPhase(models.Model):
 
     @api.onchange('name')
     def _onchange_name(self):
-        # Auto-format instantly on the interface: replace '+' with new lines
         if self.name and '+' in self.name:
             self.name = '\n'.join([part.strip() for part in self.name.split('+') if part.strip()])
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Ensure it safely saves with newlines in the Database, so it prints perfectly
         for vals in vals_list:
             if vals.get('name') and '+' in str(vals.get('name', '')):
                 vals['name'] = '\n'.join([p.strip() for p in str(vals['name']).split('+') if p.strip()])
         return super(ProjectTaskPhase, self).create(vals_list)
 
     def write(self, vals):
-        # Ensure it safely updates with newlines in the Database
         if vals.get('name') and '+' in str(vals.get('name', '')):
             vals['name'] = '\n'.join([p.strip() for p in str(vals['name']).split('+') if p.strip()])
         return super(ProjectTaskPhase, self).write(vals)

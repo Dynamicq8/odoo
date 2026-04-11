@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ====================================================== -->
+    <!--  PDF REPORT TEMPLATE: Project Description              -->
+    <!--  report_name: engineering_project.report_project_description_pdf -->
+    <!-- ====================================================== -->
+    <template id="report_project_description_pdf">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="task">
+                <t t-call="web.external_layout">
+                    <div class="page" style="direction: rtl; text-align: right; font-family: 'Cairo', 'Amiri', 'Arial', sans-serif;">
+
+                        <!-- ======== HEADER: Company Logo + Title ======== -->
+                        <div style="border-bottom: 3px solid #1a5276; padding-bottom: 16px; margin-bottom: 20px;">
+                            <table width="100%" style="border-collapse: collapse;">
+                                <tr>
+                                    <td style="width: 20%; vertical-align: middle; text-align: center;">
+                                        <t t-if="task.project_id.partner_id.company_id.logo">
+                                            <img t-att-src="'data:image/png;base64,' + task.project_id.partner_id.company_id.logo.decode('utf-8')"
+                                                 style="max-height: 80px; max-width: 160px;"/>
+                                        </t>
+                                        <t t-elif="task.env.company.logo">
+                                            <img t-att-src="'data:image/png;base64,' + task.env.company.logo.decode('utf-8')"
+                                                 style="max-height: 80px; max-width: 160px;"/>
+                                        </t>
+                                    </td>
+                                    <td style="width: 60%; text-align: center; vertical-align: middle;">
+                                        <h2 style="color: #1a5276; margin: 0; font-size: 22px;">وصف المشروع الهندسي</h2>
+                                        <p style="color: #555; margin: 4px 0 0 0; font-size: 13px;">Project Description Report</p>
+                                    </td>
+                                    <td style="width: 20%; text-align: left; vertical-align: middle; font-size: 12px; color: #555;">
+                                        <div><b>التاريخ:</b> <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/></div>
+                                        <div><b>رقم المهمة:</b> <t t-esc="task.id"/></div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ======== SECTION 1: Customer & Project Info ======== -->
+                        <div style="background: #eaf2f8; border-right: 5px solid #1a5276; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                            <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x1F4CB; بيانات العميل والمشروع</h4>
+                            <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                                <tr>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #1a5276;">اسم العميل:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #aed6f1;">
+                                        <t t-esc="task.project_id.partner_id.name or '—'"/>
+                                    </td>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #1a5276;">اسم المشروع:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #aed6f1;">
+                                        <t t-esc="task.project_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #1a5276;">رقم الهاتف:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #aed6f1;">
+                                        <t t-esc="task.project_id.partner_id.mobile or task.project_id.partner_id.phone or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #1a5276;">رقم عرض السعر:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #aed6f1;">
+                                        <t t-esc="task.project_id.sale_order_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ======== SECTION 2: Property Details ======== -->
+                        <div style="background: #fdfefe; border: 1px solid #d5d8dc; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                            <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x1F3D7; بيانات العقار والموقع</h4>
+                            <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                                <tr>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #34495e;">نوع المبنى:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="dict(task.project_id._fields['building_type'].selection).get(task.project_id.building_type, '—')"/>
+                                    </td>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #34495e;">نوع الخدمة:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="dict(task.project_id._fields['service_type'].selection).get(task.project_id.service_type, '—')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المحافظة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.governorate_id.name or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المنطقة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.region_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">رقم القسيمة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.plot_no or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">القطعة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.block_no or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">الضاحية / الشارع:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.street_no or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المساحة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.project_id.area or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">رقم المخطط المساحي:</td>
+                                    <td style="padding: 5px 8px;" colspan="3">
+                                        <t t-esc="task.project_id.electricity_receipt or '—'"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ======== SECTION 3: Task Details ======== -->
+                        <div style="background: #fdfefe; border: 1px solid #d5d8dc; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                            <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x2699; تفاصيل المهمة</h4>
+                            <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                                <tr>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #34495e;">اسم المهمة:</td>
+                                    <td style="width: 75%; padding: 5px 8px; border-bottom: 1px solid #eaecee;" colspan="3">
+                                        <t t-esc="task.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المرحلة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="task.stage_id.name or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">الحالة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;">
+                                        <t t-esc="dict(task._fields['state'].selection).get(task.state, '—')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المسؤولون:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #eaecee;" colspan="3">
+                                        <t t-esc="', '.join(task.user_ids.mapped('name')) or '—'"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ======== SECTION 4: Description ======== -->
+                        <t t-if="task.description">
+                            <div style="background: #fdfefe; border: 1px solid #d5d8dc; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                                <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x1F4DD; الوصف</h4>
+                                <div style="font-size: 13px; line-height: 1.8; color: #2c3e50;" t-raw="task.description"/>
+                            </div>
+                        </t>
+
+                        <!-- ======== SECTION 5: ملاحظات ======== -->
+                        <t t-if="task.notes">
+                            <div style="background: #fef9e7; border-right: 5px solid #f39c12; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                                <h4 style="color: #b7770d; margin: 0 0 8px 0; font-size: 15px;">&#x1F4CC; ملاحظات</h4>
+                                <p style="font-size: 13px; line-height: 1.8; color: #2c3e50; white-space: pre-wrap; margin: 0;">
+                                    <t t-esc="task.notes"/>
+                                </p>
+                            </div>
+                        </t>
+
+                        <!-- ======== SECTION 6: Sub-tasks ======== -->
+                        <t t-if="task.child_ids">
+                            <div style="background: #fdfefe; border: 1px solid #d5d8dc; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                                <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x1F4CB; المهام الفرعية (Sub-tasks)</h4>
+                                <table width="100%" style="border-collapse: collapse; font-size: 12px;">
+                                    <thead>
+                                        <tr style="background: #1a5276; color: white;">
+                                            <th style="padding: 6px 10px; text-align: right; border: 1px solid #1a5276;">#</th>
+                                            <th style="padding: 6px 10px; text-align: right; border: 1px solid #1a5276;">اسم المهمة الفرعية</th>
+                                            <th style="padding: 6px 10px; text-align: right; border: 1px solid #1a5276;">المسؤول</th>
+                                            <th style="padding: 6px 10px; text-align: right; border: 1px solid #1a5276;">الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="task.child_ids" t-as="sub">
+                                            <tr t-attf-style="background: #{sub_index % 2 == 0 and '#f2f3f4' or 'white'};">
+                                                <td style="padding: 5px 10px; border: 1px solid #d5d8dc; text-align: center;">
+                                                    <t t-esc="sub_index + 1"/>
+                                                </td>
+                                                <td style="padding: 5px 10px; border: 1px solid #d5d8dc;">
+                                                    <t t-esc="sub.name"/>
+                                                </td>
+                                                <td style="padding: 5px 10px; border: 1px solid #d5d8dc;">
+                                                    <t t-esc="', '.join(sub.user_ids.mapped('name')) or '—'"/>
+                                                </td>
+                                                <td style="padding: 5px 10px; border: 1px solid #d5d8dc;">
+                                                    <t t-esc="dict(sub._fields['state'].selection).get(sub.state, '—')"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- ======== SECTION 7: Project Team ======== -->
+                        <div style="background: #f0f3f4; border: 1px solid #d5d8dc; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px;">
+                            <h4 style="color: #1a5276; margin: 0 0 10px 0; font-size: 15px;">&#x1F465; فريق المشروع</h4>
+                            <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                                <tr>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #34495e;">المهندس المعماري:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.architect_id.name or '—'"/>
+                                    </td>
+                                    <td style="width: 25%; padding: 5px 8px; font-weight: bold; color: #34495e;">المهندس الإنشائي:</td>
+                                    <td style="width: 25%; padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.structural_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">السكرتارية:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.secretary_id.name or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">المحاسبة:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.accountant_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">رسام الواجهات:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.facade_draftsman_id.name or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">رسام البلدية:</td>
+                                    <td style="padding: 5px 8px; border-bottom: 1px solid #d5d8dc;">
+                                        <t t-esc="task.project_id.muni_draftsman_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">مهندس الكهرباء:</td>
+                                    <td style="padding: 5px 8px;">
+                                        <t t-esc="task.project_id.electrical_id.name or '—'"/>
+                                    </td>
+                                    <td style="padding: 5px 8px; font-weight: bold; color: #34495e;">الرسام (صحي):</td>
+                                    <td style="padding: 5px 8px;">
+                                        <t t-esc="task.project_id.draftsman_id.name or '—'"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ======== FOOTER ======== -->
+                        <div style="border-top: 2px solid #1a5276; padding-top: 10px; margin-top: 20px; text-align: center; color: #888; font-size: 11px;">
+                            <t t-esc="task.env.company.name"/> &amp;nbsp;|&amp;nbsp;
+                            تم إنشاء هذا التقرير بتاريخ: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

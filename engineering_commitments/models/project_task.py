@@ -322,9 +322,9 @@ class ProjectProject(models.Model):
             domain.append(('building_type', 'in', ['all', False]))
 
         if service_type:
-            domain.append(('service_type', 'in', [service_type, 'all', False]))
+            domain.append(('service_type', 'in',[service_type, 'all', False]))
         else:
-            domain.append(('service_type', 'in', ['all', False]))
+            domain.append(('service_type', 'in',['all', False]))
 
         if pack:
             domain.extend(['|', ('package_id', '=', False), ('package_id', '=', pack.id)])
@@ -433,7 +433,7 @@ class ProjectProject(models.Model):
 
             template = line.sign_template_id
             roles = list(set(template.sign_item_ids.mapped('responsible_id')))
-            signers = []
+            signers =[]
 
             for role in roles:
                 partner = project.partner_id if (role_customer and role.id == role_customer.id) else current_partner
@@ -464,16 +464,16 @@ class ProjectProject(models.Model):
             arabic_day_str = arabic_days.get(current_date.weekday(), '')
 
             replacements = {
-                'name': f"          {project.partner_id.name or ''}",
+                'name': project.partner_id.name or '',
                 'date': current_date.strftime("%d/%m/%Y"),
-                'day': f"          {arabic_day_str}",
-                'nationality': f"          كويتي",
-                'governorate': f"          {clean_gov_name}",
-                'region': f"          {project.region_id.name if getattr(project, 'region_id', False) else ''}",
-                'block': f"          {getattr(project, 'block_no', '')}",
-                'plot': f"          {getattr(project, 'plot_no', '')}",
+                'day': arabic_day_str,
+                'nationality': 'كويتي',
+                'governorate': clean_gov_name,
+                'region': project.region_id.name if getattr(project, 'region_id', False) else '',
+                'block': getattr(project, 'block_no', ''),
+                'plot': getattr(project, 'plot_no', ''),
                 'area': str(getattr(project, 'area', '') or ''),
-                'civil': f"          {getattr(project, 'civil_number', '')}",
+                'civil': getattr(project, 'civil_number', ''),
                 'customer signature text': project.partner_id.name or '',
                 'company signature text': self.env.company.name or '',
             }
@@ -528,7 +528,7 @@ class ProjectProject(models.Model):
                 # -------------------------------------------------------
 
                 elif field_name in replacements:
-                    value = replacements[field_name]
+                    value = str(replacements[field_name]).strip()
                     signer = sign_request.request_item_ids.filtered(
                         lambda r: r.role_id.id == item.responsible_id.id
                     )
