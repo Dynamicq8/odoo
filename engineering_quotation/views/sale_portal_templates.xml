@@ -97,7 +97,12 @@
 
                             <div class="mt-3 pt-3 border-top text-left" t-if="sale_order.engineering_package_id.list_price">
                                 <strong class="text-muted" style="font-size: 0.9em;">سعر الخدمات </strong>
+                                <!-- MODIFIED LINE HERE for price in Arabic words -->
                                 <span class="text-primary font-weight-bold" style="font-size: 1.1em;" t-field="sale_order.engineering_package_id.list_price"/>
+                                (
+                                    <span class="text-primary font-weight-bold" style="font-size: 1.1em;" t-field="sale_order.engineering_package_id.price_in_arabic_words"/>
+                                    فقط لا غير
+                                )
                             </div>
                         </div>
                     </div>

@@ -123,7 +123,65 @@ WORKFLOW_TEMPLATES = {
         {'code': 'dem_3_2', 'name': '2- إنهاء الإشراف', 'stage': 'المرحلة الثالثة', 'role': 'secretary_id', 'depends_on': ['dem_3_1']}, # Modified dependency
     ]
 }
+def number_to_arabic_words(number):
+    number = int(number)  # ignore fils for now
 
+    if number == 0:
+        return 'صفر'
+
+    ones = [
+        '', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة',
+        'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر',
+        'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'
+    ]
+    tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون']
+    hundreds = [
+        '', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة',
+        'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'
+    ]
+
+    def _convert_below_1000(n):
+        if n == 0:
+            return ''
+        elif n < 20:
+            return ones[n]
+        elif n < 100:
+            ten = tens[n // 10]
+            one = ones[n % 10]
+            return (one + ' و' + ten) if one else ten
+        else:
+            h = hundreds[n // 100]
+            rest = _convert_below_1000(n % 100)
+            return (h + ' و' + rest) if rest else h
+
+    result = ''
+
+    if number >= 1000000:
+        millions = number // 1000000
+        if millions == 1:
+            result += 'مليون '
+        elif millions == 2:
+            result += 'مليونان '
+        else:
+            result += _convert_below_1000(millions) + ' ملايين '
+        number %= 1000000
+
+    if number >= 1000:
+        thousands = number // 1000
+        if thousands == 1:
+            result += 'ألف '
+        elif thousands == 2:
+            result += 'ألفان '
+        elif 3 <= thousands <= 10:
+            result += _convert_below_1000(thousands) + ' آلاف '
+        else:
+            result += _convert_below_1000(thousands) + ' ألف '
+        number %= 1000
+
+    if number > 0:
+        result += _convert_below_1000(number)
+
+    return result.strip()
 # ==============================================================================
 #  SALE ORDER MODEL
 # ==============================================================================
