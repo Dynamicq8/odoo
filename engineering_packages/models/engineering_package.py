@@ -123,6 +123,17 @@ class EngineeringPackage(models.Model):
     feature_ids = fields.One2many('engineering.package.feature', 'package_id',
                                    string='مميزات الباقة (Package Features)')
 
+    @api.depends('list_price')
+    def _compute_price_in_arabic_words(self):
+        for rec in self:
+            rec.price_in_arabic_words = number_to_arabic_words(rec.list_price)
+
+    price_in_arabic_words = fields.Char(
+        string="السعر بالحروف العربية",
+        compute=_compute_price_in_arabic_words,
+        store=True, # You can store it if performance is a concern, but it's not strictly necessary for reports.
+    )
+
     def action_create_product(self):
         self.ensure_one()
         if self.product_id:
@@ -195,4 +206,7 @@ class SaleOrder(models.Model):
 
     def amount_in_arabic_words(self):
         self.ensure_one()
+        # This function currently uses amount_total.
+        # If you intend to use it for package price, you'd need to adapt it.
+        # For now, we'll use the new computed field on engineering.package directly.
         return number_to_arabic_words(self.amount_total)

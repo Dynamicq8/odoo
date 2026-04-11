@@ -123,7 +123,12 @@
                             <t t-if="doc.engineering_package_id.list_price">
                                 <div style="margin-bottom: 15px; padding: 12px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; text-align: center;">
                                     <h4 style="margin: 0; color: #1565c0; font-weight: bold;">
-                                        سعر الخدمات  <span t-field="doc.engineering_package_id.list_price"/>
+                                        سعر الخدمات: 
+                                        <span t-field="doc.engineering_package_id.list_price" t-options='{"widget": "monetary", "display_currency": doc.company_id.currency_id}'/>
+                                        (
+                                            <span t-field="doc.engineering_package_id.price_in_arabic_words"/>
+                                            فقط لا غير
+                                        )
                                     </h4>
                                 </div>
                             </t>
