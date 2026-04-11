@@ -497,33 +497,41 @@ class ProjectProject(models.Model):
                 _logger.warning(f"FIELD DETECTED >>> '{field_name}'")
 
                 # --- NEW LOGIC FOR FILLING 'SEAL' FIELD WITH IMAGE ---
-                if field_name == 'seal' and company_seal_b64:
-                    # For image fields, we might need to send a specific format.
-                    # Odoo Sign uses data URLs or special JSON for image fields.
-                    # This is a common format for base64 images in Odoo:
-                    # {"data": "base64_string", "name": "filename.png", "mimetype": "image/png"}
-                    image_value = {
-                        'data': company_seal_b64.decode('utf-8'), # binary to string
-                        'name': company_seal_filename,
-                        'mimetype': 'image/png' # or 'image/jpeg'
-                    }
-                    # We store it as a stringified JSON for sign.request.item.value
-                    value_to_store = json.dumps(image_value)
-                    
-                    # Log to check what is being stored
-                    _logger.warning(f"FILLING SEAL FIELD with IMAGE: {item.name}, Value: {value_to_store[:100]}...") # Log only first 100 chars
-                    
-                    signer = sign_request.request_item_ids.filtered(
-                        lambda r: r.role_id.id == item.responsible_id.id
-                    )
-                    if signer:
-                        self.env['sign.request.item.value'].sudo().create({
-                            'sign_request_id': sign_request.id,
-                            'sign_request_item_id': signer[0].id,
-                            'sign_item_id': item.id,
-                            'value': value_to_store,
-                        })
-                # --- END NEW LOGIC ---
+               if field_name == 'seal' and company_seal_b64:
+                # Odoo Sign image fields expect a plain base64 data URL, not a JSON object.
+                # company.company_seal_image is stored as base64-encoded bytes (Binary field).
+                # We decode the bytes to a plain string, then build a data URL.
+                if isinstance(company_seal_b64, bytes):
+                    seal_b64_str = company_seal_b64.decode('utf-8')
+                else:
+                    seal_b64_str = company_seal_b64  # already a string
+
+                # Detect MIME type from filename, default to png
+                fname = (company.company_seal_filename or 'seal.png').lower()
+                if fname.endswith('.jpg') or fname.endswith('.jpeg'):
+                    mime = 'image/jpeg'
+                elif fname.endswith('.gif'):
+                    mime = 'image/gif'
+                else:
+                    mime = 'image/png'
+
+                value_to_store = f"data:{mime};base64,{seal_b64_str}"
+
+                _logger.warning(
+                    f"FILLING SEAL FIELD with IMAGE data URL (first 80 chars): "
+                    f"{value_to_store[:80]}..."
+                )
+
+                signer = sign_request.request_item_ids.filtered(
+                    lambda r: r.role_id.id == item.responsible_id.id
+                )
+                if signer:
+                    self.env['sign.request.item.value'].sudo().create({
+                        'sign_request_id': sign_request.id,
+                        'sign_request_item_id': signer[0].id,
+                        'sign_item_id': item.id,
+                        'value': value_to_store,
+                    })
 
                 elif field_name in replacements:
                     value = replacements[field_name]
