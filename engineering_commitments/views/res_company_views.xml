@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_company_form_inherit_seal" model="ir.ui.view">
+        <field name="name">res.company.form.inherit.seal</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_registry']" position="after">
+                <group string="Company Seal">
+                    <field name="company_seal_image" widget="image" filename="company_seal_filename"/>
+                    <field name="company_seal_filename" invisible="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

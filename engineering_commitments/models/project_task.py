@@ -2,6 +2,9 @@
 import logging
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+import base64 # Import base64 for image handling
+import re     # Keep re for WhatsApp logic
+import urllib.parse # Keep urllib.parse for WhatsApp logic
 
 _logger = logging.getLogger(__name__)
 
@@ -49,19 +52,20 @@ class SignTemplate(models.Model):
     ], string="Service Type (نوع الخدمة)", default='all')
 
 
-def _action_sign_now_direct(self):
-    self.ensure_one()
-    if not self.sign_request_id:
+# Refactored direct actions to be more flexible
+def _action_sign_now_direct(self_record): # Changed self to self_record to avoid conflict with class self
+    self_record.ensure_one()
+    if not self_record.sign_request_id:
         raise UserError(_("No generated document yet."))
 
-    request = self.sign_request_id
-    user = self.env.user
+    request = self_record.sign_request_id
+    user = self_record.env.user
 
     request_item = request.request_item_ids.filtered(
         lambda r: r.partner_id.id == user.partner_id.id
     )
     if not request_item:
-        request_item = request.request_item_ids[:1]
+        request_item = request.request_item_ids[:1] # Fallback to first if user not found
     if not request_item:
         raise UserError(_("You are not assigned to sign this document, and no other signers were found."))
 
@@ -72,7 +76,7 @@ def _action_sign_now_direct(self):
     }
 
 
-def _action_send_whatsapp_direct(self):
+def _action_send_whatsapp_direct(self_record): # Changed self to self_record
     """
     Build a WhatsApp URL containing the signing link and open it in a new tab.
     The phone number is read from the customer (partner_id) on the linked
@@ -81,24 +85,24 @@ def _action_send_whatsapp_direct(self):
 
     Priority for phone: partner.mobile → partner.phone → current user mobile/phone
     """
-    self.ensure_one()
-    if not self.sign_request_id:
+    self_record.ensure_one()
+    if not self_record.sign_request_id:
         raise UserError(_("لا يوجد مستند محدد بعد. يرجى توليد PDF أولاً.\n(No document generated yet. Please generate the PDF first.)"))
 
-    request = self.sign_request_id
+    request = self_record.sign_request_id
 
     # ------------------------------------------------------------------ #
     # 1. Resolve the customer partner from project_id or task_id
     # ------------------------------------------------------------------ #
     partner = None
 
-    if hasattr(self, 'project_id') and self.project_id:
-        partner = self.project_id.partner_id
-    elif hasattr(self, 'task_id') and self.task_id:
-        partner = self.task_id.project_id.partner_id
+    if hasattr(self_record, 'project_id') and self_record.project_id:
+        partner = self_record.project_id.partner_id
+    elif hasattr(self_record, 'task_id') and self_record.task_id:
+        partner = self_record.task_id.project_id.partner_id
 
     if not partner:
-        partner = self.env.user.partner_id
+        partner = self_record.env.user.partner_id
 
     # ------------------------------------------------------------------ #
     # 2. Get phone number (mobile preferred over phone)
@@ -107,7 +111,7 @@ def _action_send_whatsapp_direct(self):
 
     if not phone:
         # Last resort: current user
-        phone = (self.env.user.partner_id.mobile or self.env.user.partner_id.phone or '').strip()
+        phone = (self_record.env.user.partner_id.mobile or self_record.env.user.partner_id.phone or '').strip()
 
     if not phone:
         raise UserError(_(
@@ -121,7 +125,7 @@ def _action_send_whatsapp_direct(self):
     #    If number starts with 0, replace leading 0 with country code 965
     #    (Kuwait default – adjust as needed).
     # ------------------------------------------------------------------ #
-    import re
+    
     phone_clean = re.sub(r'[\s\-\(\)]+', '', phone)
     if phone_clean.startswith('00'):
         phone_clean = '+' + phone_clean[2:]
@@ -141,13 +145,13 @@ def _action_send_whatsapp_direct(self):
     if not request_item:
         raise UserError(_("No signer found on this sign request."))
 
-    base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '').rstrip('/')
+    base_url = self_record.env['ir.config_parameter'].sudo().get_param('web.base.url', '').rstrip('/')
     sign_url = f"{base_url}/sign/document/{request.id}/{request_item[0].access_token}"
 
     # ------------------------------------------------------------------ #
     # 5. Compose WhatsApp message
     # ------------------------------------------------------------------ #
-    doc_name = request.reference or self.sign_template_id.name or _("المستند")
+    doc_name = request.reference or self_record.sign_template_id.name or _("المستند")
     message = (
         f"مرحباً {partner.name}،\n\n"
         f"يرجى مراجعة وتوقيع المستند التالي:\n"
@@ -156,7 +160,6 @@ def _action_send_whatsapp_direct(self):
         f"شكراً لتعاملكم معنا."
     )
 
-    import urllib.parse
     whatsapp_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
 
     return {
@@ -417,7 +420,7 @@ class ProjectProject(models.Model):
         return True
 
     # ---------------------------------------------------------
-    # SHARED PDF GENERATOR
+    # SHARED PDF GENERATOR - MODIFIED TO INCLUDE SEAL IMAGE
     # ---------------------------------------------------------
     def _generate_pdfs_for_lines(self, lines):
         project = self
@@ -426,6 +429,11 @@ class ProjectProject(models.Model):
 
         role_customer = self.env.ref('sign.sign_item_role_customer', raise_if_not_found=False)
         current_partner = self.env.user.partner_id
+        company = self.env.company # Get the current company record
+
+        # Get the company seal image (base64) if available
+        company_seal_b64 = company.company_seal_image if company.company_seal_image else False
+        company_seal_filename = company.company_seal_filename or "seal.png"
 
         for line in lines:
             if line.sign_request_id and line.sign_request_id.state == 'signed':
@@ -486,7 +494,37 @@ class ProjectProject(models.Model):
             for item in template.sign_item_ids:
                 field_name = (item.name or '').strip().lower()
                 _logger.warning(f"FIELD DETECTED >>> '{field_name}'")
-                if field_name in replacements:
+
+                # --- NEW LOGIC FOR FILLING 'SEAL' FIELD WITH IMAGE ---
+                if field_name == 'seal' and company_seal_b64:
+                    # For image fields, we might need to send a specific format.
+                    # Odoo Sign uses data URLs or special JSON for image fields.
+                    # This is a common format for base64 images in Odoo:
+                    # {"data": "base64_string", "name": "filename.png", "mimetype": "image/png"}
+                    image_value = {
+                        'data': company_seal_b64.decode('utf-8'), # binary to string
+                        'name': company_seal_filename,
+                        'mimetype': 'image/png' # or 'image/jpeg'
+                    }
+                    # We store it as a stringified JSON for sign.request.item.value
+                    value_to_store = json.dumps(image_value)
+                    
+                    # Log to check what is being stored
+                    _logger.warning(f"FILLING SEAL FIELD with IMAGE: {item.name}, Value: {value_to_store[:100]}...") # Log only first 100 chars
+                    
+                    signer = sign_request.request_item_ids.filtered(
+                        lambda r: r.role_id.id == item.responsible_id.id
+                    )
+                    if signer:
+                        self.env['sign.request.item.value'].sudo().create({
+                            'sign_request_id': sign_request.id,
+                            'sign_request_item_id': signer[0].id,
+                            'sign_item_id': item.id,
+                            'value': value_to_store,
+                        })
+                # --- END NEW LOGIC ---
+
+                elif field_name in replacements:
                     value = replacements[field_name]
                     signer = sign_request.request_item_ids.filtered(
                         lambda r: r.role_id.id == item.responsible_id.id
@@ -594,7 +632,15 @@ class ProjectTask(models.Model):
         return True
 
     def _generate_pdfs_for_lines(self, lines):
-        self.project_id._generate_pdfs_for_lines(lines)
+        # We need to explicitly pass 'self' (the task record) to the project's method
+        # if the project's method relies on project-specific context.
+        # However, if the project method already gets the project from the lines,
+        # we can keep it as is. For safety, let's adapt it to use the project
+        # associated with the task for consistency.
+        if self.project_id:
+            self.project_id._generate_pdfs_for_lines(lines)
+        else:
+            raise UserError(_("Task must be linked to a Project to generate PDFs."))
 
     def action_quick_sign_phase(self):
         self.ensure_one()

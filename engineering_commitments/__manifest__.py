@@ -15,6 +15,8 @@
         'views/sign_template_views.xml',
         'reports/project_commitment_report.xml',
         'views/project_task_views.xml',
+                'views/res_company_views.xml', # You'll need a view to see the field
+
     ],
      'assets': {
         'web.assets_backend': [
