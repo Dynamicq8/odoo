@@ -104,17 +104,15 @@
             </xpath>
 
             <!-- ============================================================ -->
-            <!-- INJECT ملاحظات FIELD into the Sub-tasks tab                  -->
-            <!-- Position: after the assigned users field (user_ids)           -->
+            <!-- Add ملاحظات as an inline column inside the child_ids tree    -->
             <!-- ============================================================ -->
-            <xpath expr="//field[@name='child_ids']" position="before">
+            <xpath expr="//field[@name='child_ids']/tree/field[last()]" position="after">
                 <field name="notes"
                        string="ملاحظات"
-                       placeholder="أدخل ملاحظاتك هنا..."
-                       widget="text"
-                       style="min-height: 60px; width: 100%; direction: rtl; text-align: right;"
-                       options="{'no_open': True}"/>
-                <separator/>
+                       optional="show"
+                       widget="char"
+                       placeholder="ملاحظة..."
+                       style="direction: rtl; text-align: right;"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">
