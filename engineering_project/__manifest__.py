@@ -10,6 +10,8 @@
         'sale_management',
         'engineering_core',
         'sign',
+            'engineering_quotation',   # ← ADD THIS
+
     ],
     'data': [
         'reports/initial_design_report.xml',
