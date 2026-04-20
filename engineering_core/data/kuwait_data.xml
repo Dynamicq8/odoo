@@ -1,22 +1,22 @@
 <odoo>
     <data noupdate="1">
         <!-- Governorates -->
-        <record id="gov_asima" model="kuwait.region">
+        <record id="gov_asima" model="kuwait.governorate">
             <field name="name">محافظة العاصمة</field>
         </record>
-        <record id="gov_hawalli" model="kuwait.region">
+        <record id="gov_hawalli" model="kuwait.governorate">
             <field name="name">محافظة حولي</field>
         </record>
-        <record id="gov_farwaniya" model="kuwait.region">
+        <record id="gov_farwaniya" model="kuwait.governorate">
             <field name="name">محافظة الفروانية</field>
         </record>
-        <record id="gov_ahmadi" model="kuwait.region">
+        <record id="gov_ahmadi" model="kuwait.governorate">
             <field name="name">محافظة الأحمدي</field>
         </record>
-        <record id="gov_jahra" model="kuwait.region">
+        <record id="gov_jahra" model="kuwait.governorate">
             <field name="name">محافظة الجهراء</field>
         </record>
-        <record id="gov_mubarak_alkabeer" model="kuwait.region">
+        <record id="gov_mubarak_alkabeer" model="kuwait.governorate">
             <field name="name">محافظة مبارك الكبير</field>
         </record>
 
